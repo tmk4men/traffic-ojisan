@@ -349,7 +349,11 @@ function pickPortal(){
 
 function pickType(){
   // 茶（触ると即終了）：Lv2 から たまに、レベルで微増。最大10%。
-  const brownChance = state.level >= 2 ? Math.min(0.10, 0.03 + state.level * 0.008) : 0;
+  // ただし画面上に同時3個まで。
+  const brownOnField = state.bombs.filter(b => b.type==='brown' && !b._dead).length;
+  const brownChance = (state.level >= 2 && brownOnField < 3)
+    ? Math.min(0.10, 0.03 + state.level * 0.008)
+    : 0;
   if(Math.random() < brownChance) return 'brown';
   return Math.random() < 0.5 ? 'black' : 'red';
 }
