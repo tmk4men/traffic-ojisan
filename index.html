@@ -11,6 +11,9 @@
   canvas{background:#000;touch-action:none;display:block;box-shadow:0 0 24px rgba(0,0,0,.6);}
   .hidden{display:none !important;}
   .small{font-size:12px;opacity:.7;}
+  .ic{display:inline-block;width:1.05em;height:1.05em;vertical-align:-0.18em;}
+  .ic-lg{width:1.7em;height:1.7em;vertical-align:-0.35em;}
+  .ic-xl{width:2.4em;height:2.4em;vertical-align:-0.45em;}
   /* ホーム画面 */
   #home{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
         background:linear-gradient(180deg,#2c2c3a 0%,#1a1a26 100%);z-index:10;
@@ -51,6 +54,15 @@
               text-align:center;max-width:280px;}
   #daily h2{margin:0 0 10px;color:#ffd24a;}
   #daily .day{font-size:13px;opacity:.7;margin:4px 0;}
+  #daily .streakDots{display:flex;justify-content:center;gap:5px;margin:8px 0;}
+  #daily .streakDots .dot{width:18px;height:18px;border-radius:50%;background:#3a3a48;
+                          display:flex;align-items:center;justify-content:center;
+                          font-size:10px;font-weight:bold;color:#666;}
+  #daily .streakDots .dot.done{background:#ffd24a;color:#222;}
+  #daily .streakDots .dot.today{background:#ff6644;color:#fff;
+                                box-shadow:0 0 0 2px #ffd24a;animation:pulse .8s ease-in-out infinite alternate;}
+  #daily .streakDots .dot.gift{background:#ff66aa;color:#fff;}
+  @keyframes pulse{from{transform:scale(1);}to{transform:scale(1.15);}}
   #daily .amt{font-size:32px;font-weight:bold;color:#ffd24a;margin:8px 0;}
   #daily .extra{color:#ffaa66;font-size:13px;margin-bottom:6px;}
   #daily button{margin-top:14px;padding:10px 28px;border:none;border-radius:20px;
@@ -66,27 +78,65 @@
 </style>
 </head>
 <body>
+<!-- SVG アイコン スプライト -->
+<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+  <defs>
+    <symbol id="ic-trophy" viewBox="0 0 24 24">
+      <path d="M5 3h14v3.5c0 3.2-2.1 5.5-4.5 5.5h-5c-2.4 0-4.5-2.3-4.5-5.5z" fill="#ffd24a" stroke="#a06c10" stroke-width="1"/>
+      <path d="M2 5h3v3.2c0 1.6 1.1 2.6 2.4 2.9" fill="none" stroke="#ffd24a" stroke-width="2" stroke-linecap="round"/>
+      <path d="M22 5h-3v3.2c0 1.6-1.1 2.6-2.4 2.9" fill="none" stroke="#ffd24a" stroke-width="2" stroke-linecap="round"/>
+      <rect x="9.5" y="11.5" width="5" height="4.5" fill="#e5b830"/>
+      <rect x="7" y="16" width="10" height="3" rx="0.6" fill="#c8951a"/>
+      <rect x="5" y="19" width="14" height="3" rx="0.6" fill="#8a6510"/>
+    </symbol>
+    <symbol id="ic-coin" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" fill="#ffd24a" stroke="#a06c10" stroke-width="1.4"/>
+      <circle cx="12" cy="12" r="6.8" fill="none" stroke="#c8951a" stroke-width="1"/>
+      <path d="M9.5 8h2.5c1.7 0 2.5 1 2.5 2.2 0 1.2-.9 2.2-2.5 2.2H10v3.6" fill="none" stroke="#7a5210" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="ic-burst" viewBox="0 0 24 24">
+      <path d="M12 1.5l1.9 5.4 5.4-2.4-2.4 5.4 5.4 1.9-5.4 1.9 2.4 5.4-5.4-2.4L12 22l-1.9-5.4-5.4 2.4 2.4-5.4L1.5 12l5.4-1.9-2.4-5.4 5.4 2.4z" fill="#ff6644" stroke="#a52a1a" stroke-width="0.6" stroke-linejoin="round"/>
+      <circle cx="12" cy="11" r="3.2" fill="#ffd24a"/>
+    </symbol>
+    <symbol id="ic-gift" viewBox="0 0 24 24">
+      <rect x="3" y="11" width="18" height="11" rx="1.5" fill="#e63946" stroke="#7a1e25" stroke-width="0.8"/>
+      <rect x="11" y="11" width="2" height="11" fill="#ffd24a"/>
+      <rect x="2" y="7.5" width="20" height="4" rx="0.8" fill="#ff6678" stroke="#7a1e25" stroke-width="0.8"/>
+      <rect x="11" y="7.5" width="2" height="4" fill="#ffd24a"/>
+      <path d="M8 7.5c-2.5-3 0-4.5 4-1.5 4-3 6.5-1.5 4 1.5z" fill="#ffd24a" stroke="#a06c10" stroke-width="0.6" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="ic-party" viewBox="0 0 24 24">
+      <path d="M3 21l5.5-15 11 11z" fill="#ff6644" stroke="#a52a1a" stroke-width="0.6" stroke-linejoin="round"/>
+      <path d="M5 16l2 2-3 3z" fill="#ffd24a"/>
+      <circle cx="14" cy="6" r="1.6" fill="#ffd24a"/>
+      <circle cx="19" cy="10" r="1.3" fill="#88ddff"/>
+      <circle cx="20" cy="5" r="1.2" fill="#aaffaa"/>
+      <circle cx="11" cy="3" r="1.2" fill="#ff66cc"/>
+    </symbol>
+  </defs>
+</svg>
+
 <div id="stage"><canvas id="cv" width="360" height="640"></canvas></div>
 
 <!-- ホーム画面 -->
 <div id="home">
   <h1>ばくだんをわけろ！</h1>
   <div class="stats">
-    <div class="pill">🏆 さいこう <b id="bestVal">0</b></div>
-    <div class="pill">🪙 コイン <b id="coinsVal">0</b></div>
+    <div class="pill"><svg class="ic"><use href="#ic-trophy"/></svg> さいこう <b id="bestVal">0</b></div>
+    <div class="pill"><svg class="ic"><use href="#ic-coin"/></svg> コイン <b id="coinsVal">0</b></div>
   </div>
   <div class="shop">
     <h3>ショップ</h3>
     <div class="shopItem" data-item="zenmetsu">
       <div class="row">
-        <div class="icon">💥</div>
+        <div class="icon"><svg class="ic ic-lg"><use href="#ic-burst"/></svg></div>
         <div class="info">
           <div class="name">ぜんめつ</div>
           <div class="desc">場のばくだんを いっせいに けす</div>
           <div class="own">もちもの: <span class="ownCount">0</span> こ</div>
         </div>
       </div>
-      <button class="buyBtn">50 🪙 で 1こ かう</button>
+      <button class="buyBtn">50 <svg class="ic"><use href="#ic-coin"/></svg> で 1こ かう</button>
     </div>
   </div>
   <button id="startBtn">スタート</button>
@@ -100,9 +150,10 @@
 <!-- デイリーログイン -->
 <div id="daily" class="hidden">
   <div class="box">
-    <h2>🎁 ログインボーナス</h2>
+    <h2><svg class="ic ic-lg"><use href="#ic-gift"/></svg> ログインボーナス</h2>
     <div class="day">れんぞく <span id="dailyStreak">1</span> にちめ</div>
-    <div class="amt">+ <span id="dailyCoins">0</span> 🪙</div>
+    <div class="streakDots" id="streakDots"></div>
+    <div class="amt">+ <span id="dailyCoins">0</span> <svg class="ic"><use href="#ic-coin"/></svg></div>
     <div class="extra hidden" id="dailyBonus">＋ ぜんめつ ×1</div>
     <button id="dailyOk">うけとる</button>
   </div>
@@ -157,6 +208,85 @@ const SAVE = {
 };
 const save = SAVE.load();
 
+// 効果音（Web Audio で合成、ファイル不要）
+const sfx = {
+  ctx: null, master: null, enabled: true,
+  init(){
+    if(this.ctx) return;
+    try {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.5;
+      this.master.connect(this.ctx.destination);
+    } catch(e){ this.enabled = false; }
+  },
+  beep(freq, dur, type='sine', vol=0.2, slide=0){
+    this.init();
+    if(!this.enabled || !this.ctx) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq+slide), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + dur + 0.05);
+  },
+  noiseBurst(dur=0.25, vol=0.35){
+    this.init();
+    if(!this.enabled || !this.ctx) return;
+    const t = this.ctx.currentTime;
+    const buf = this.ctx.createBuffer(1, this.ctx.sampleRate*dur, this.ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for(let i=0;i<data.length;i++){
+      data[i] = (Math.random()*2-1) * Math.pow(1 - i/data.length, 1.6);
+    }
+    const src = this.ctx.createBufferSource(); src.buffer = buf;
+    const g = this.ctx.createGain(); g.gain.value = vol;
+    const lp = this.ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value = 800;
+    src.connect(lp); lp.connect(g); g.connect(this.master);
+    src.start(t);
+  },
+  pickup(){ this.beep(720, 0.05, 'square', 0.13); },
+  release(){ this.beep(540, 0.04, 'square', 0.10); },
+  place(combo){
+    const base = 740 + Math.min(8, combo|0)*80;
+    this.beep(base, 0.06, 'triangle', 0.18);
+    setTimeout(()=>this.beep(base*1.5, 0.07, 'triangle', 0.16), 55);
+  },
+  combo(mul){
+    this.beep(900, 0.05, 'square', 0.18);
+    setTimeout(()=>this.beep(1200, 0.05, 'square', 0.18), 50);
+    setTimeout(()=>this.beep(1500, 0.08, 'square', 0.18), 100);
+    if(mul >= 5) setTimeout(()=>this.beep(1900, 0.10, 'square', 0.18), 150);
+  },
+  bomb(){
+    this.beep(110, 0.18, 'sawtooth', 0.30, -70);
+    this.noiseBurst(0.28, 0.42);
+  },
+  item(){ // ぜんめつ
+    this.beep(1200, 0.08, 'square', 0.18);
+    this.noiseBurst(0.18, 0.30);
+  },
+  coin(){ this.beep(1400, 0.05, 'sine', 0.18); setTimeout(()=>this.beep(1900, 0.08, 'sine', 0.16), 60); },
+  buy(){ this.coin(); },
+  warn(){
+    const now = performance.now();
+    if(now - (this._lastWarn||0) < 90) return;
+    this._lastWarn = now;
+    this.beep(1800, 0.04, 'square', 0.14);
+  },
+  daily(){
+    this.beep(523, 0.10, 'triangle', 0.22);
+    setTimeout(()=>this.beep(659, 0.10, 'triangle', 0.22), 100);
+    setTimeout(()=>this.beep(784, 0.16, 'triangle', 0.22), 200);
+  },
+  tap(){ this.beep(1100, 0.025, 'square', 0.10); },
+};
+
 // レイアウト
 const HUD_H = 36;
 const FLOOR = {x:6, y:HUD_H+8, w:W-12, h:328};   // 徘徊エリア（広め）
@@ -208,9 +338,9 @@ function refreshHome(){
   coinsValEl.textContent = save.coins;
   ownCountEl.textContent = (save.owned.zenmetsu||0);
   buyBtnEl.disabled = save.coins < ZEN_PRICE;
-  buyBtnEl.textContent = (save.coins < ZEN_PRICE)
-    ? `コインが ${ZEN_PRICE} こ ひつよう`
-    : `${ZEN_PRICE} 🪙 で 1こ かう`;
+  buyBtnEl.innerHTML = (save.coins < ZEN_PRICE)
+    ? `コインが ${ZEN_PRICE - save.coins} こ たりない`
+    : `${ZEN_PRICE} <svg class="ic"><use href="#ic-coin"/></svg> で 1こ かう`;
   // 履歴
   if(save.history.length === 0){
     historyListEl.innerHTML = '<li class="empty">まだ プレイ なし</li>';
@@ -446,7 +576,7 @@ class Bomb{
 
     // 茶ばくだんの「触るな」マーク（赤いオーラ＋ヒット蓄積メーター）
     if(this.type==='brown'){
-      const meter = Math.min(1, this.swipeAccum / 120);
+      const meter = Math.min(1, this.swipeAccum / 80);
       // ベースの赤オーラ
       ctx.strokeStyle = 'rgba(255,40,40,'+ (0.55 + 0.3*Math.sin(performance.now()*0.012)) +')';
       ctx.lineWidth = 3;
@@ -562,13 +692,26 @@ function pickType(){
 }
 
 function makeBomb(){
-  const p = pickPortal();
   const t = pickType();
+  let p;
+  if(t === 'brown'){
+    // 茶は上から出すと仕分けゾーンを突っ切ってしまうため、左右のみに限定
+    const sidePortals = PORTALS.filter(pp => pp.unlock <= state.level && pp.side !== 'top');
+    if(sidePortals.length === 0){
+      // 左右ポータルがまだ無い段階ではフォールバックで通常タイプ
+      const t2 = Math.random() < 0.5 ? 'black' : 'red';
+      const p2 = pickPortal();
+      return new Bomb(t2, p2.side, p2.pos);
+    }
+    p = sidePortals[Math.floor(Math.random()*sidePortals.length)];
+  } else {
+    p = pickPortal();
+  }
   const b = new Bomb(t, p.side, p.pos);
   // 気まぐれダッシュ（黄色）：Lv3+ から低確率
   if(t !== 'brown' && state.level >= 3 && Math.random() < Math.min(0.18, 0.06 + state.level*0.012)){
     b.dashy = true;
-    b.dashCooldown = 2200 + Math.random()*2500; // 登場直後は少し溜め
+    b.dashCooldown = 2200 + Math.random()*2500;
   }
   return b;
 }
@@ -609,6 +752,7 @@ function explode(bomb){
   state.flashColor = '#ffd24a';
   bomb._exploded = true;
   bomb._dead = true;
+  sfx.bomb();
   setTimeout(endGame, 400);
 }
 
@@ -626,6 +770,13 @@ function placeBomb(bomb, zoneKey){
     state.score = Math.min(9999, state.score + mul);
     state.scoreFloaters.push({x: bomb.x, y: bomb.y - 10, val: mul, mul: mul, life: 900, max: 900});
     spawnParticles(bomb.x, bomb.y, '#ffffaa', 8);
+    // 効果音：通常配置 or コンボティア上昇
+    const prevTierMul = comboMul(state.combo - 1);
+    if(mul > prevTierMul){
+      sfx.combo(mul);
+    } else {
+      sfx.place(state.combo);
+    }
     // 1点ごとに ごく ゆっくり早くなる
     state.spawnInterval = Math.max(480, state.spawnInterval * 0.988);
     // レベル：8の倍数を跨いだら+1（コンボで複数跨ぐ場合に対応）
@@ -658,6 +809,7 @@ function pointInItem(x,y){
 function useItem(){
   if(state.itemCount <= 0) return;
   state.itemCount--;
+  sfx.item();
   // 場上の未仕分けばくだんを全部除去（placed以外）
   state.bombs.forEach(b=>{
     if(b._dead) return;
@@ -709,6 +861,7 @@ function onDown(e){
       b.state = 'drag';
       state.bombs.splice(i,1);
       state.bombs.push(b);
+      sfx.pickup();
       return;
     }
   }
@@ -731,7 +884,8 @@ function onMove(e){
         if(bdx*bdx + bdy*bdy <= (b.r+6)*(b.r+6)){
           b.swipeAccum += moved;
           b.hitFlash = 1;
-          if(b.swipeAccum >= 120){
+          sfx.warn();
+          if(b.swipeAccum >= 80){
             explode(b);  // GAME OVER
           }
         }
@@ -825,6 +979,36 @@ function roundRect(x,y,w,h,r,fill,stroke){
   if(stroke) ctx.stroke();
 }
 
+function drawTrophyIcon(cx, cy, size){
+  const s = size/24;
+  ctx.save();
+  ctx.translate(cx, cy);
+  // 取っ手（左右）
+  ctx.strokeStyle = '#ffd24a';
+  ctx.lineWidth = 2*s;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-10*s, -10*s); ctx.lineTo(-12*s,-10*s); ctx.lineTo(-12*s,-6*s); ctx.lineTo(-9*s,-3*s);
+  ctx.moveTo( 10*s, -10*s); ctx.lineTo( 12*s,-10*s); ctx.lineTo( 12*s,-6*s); ctx.lineTo( 9*s,-3*s);
+  ctx.stroke();
+  // カップ
+  ctx.fillStyle = '#ffd24a';
+  ctx.beginPath();
+  ctx.moveTo(-8*s,-11*s);
+  ctx.lineTo(8*s,-11*s);
+  ctx.lineTo(8*s,-7*s);
+  ctx.bezierCurveTo(8*s,-2*s, 4*s, 1*s, 0, 1*s);
+  ctx.bezierCurveTo(-4*s, 1*s, -8*s,-2*s, -8*s,-7*s);
+  ctx.closePath();
+  ctx.fill();
+  // 台座
+  ctx.fillStyle = '#c8951a';
+  ctx.fillRect(-5*s, 1*s, 10*s, 3*s);
+  ctx.fillStyle = '#8a6510';
+  ctx.fillRect(-7*s, 4*s, 14*s, 3*s);
+  ctx.restore();
+}
+
 function drawHud(){
   ctx.fillStyle = 'rgba(0,0,0,.55)';
   ctx.fillRect(0,0,W,HUD_H);
@@ -837,7 +1021,12 @@ function drawHud(){
   // BEST（中央）
   ctx.fillStyle = '#ffd24a';
   ctx.textAlign = 'center';
-  ctx.fillText(`🏆 ${save.best}`, W/2, 22);
+  // BEST：左に小さなトロフィーをCanvasで描く
+  ctx.save();
+  ctx.translate(W/2 - 30, 14);
+  drawTrophyIcon(0, 0, 14);
+  ctx.restore();
+  ctx.fillText(`${save.best}`, W/2 + 8, 22);
   // Lv（右）
   ctx.fillStyle = '#fff';
   ctx.textAlign = 'right';
@@ -1069,9 +1258,9 @@ function endGame(){
   // ゲームオーバー画面
   goScoreEl.textContent = state.score;
   goCoinsEl.textContent = earned;
-  goBestEl.textContent = isNewBest
-    ? '🎉 ハイスコアこうしん！'
-    : `さいこう: ${save.best}`;
+  goBestEl.innerHTML = isNewBest
+    ? `<svg class="ic"><use href="#ic-party"/></svg> <svg class="ic"><use href="#ic-trophy"/></svg> ハイスコアこうしん！`
+    : `<svg class="ic"><use href="#ic-trophy"/></svg> さいこう: ${save.best}`;
   gameoverEl.classList.remove('hidden');
 }
 
@@ -1112,6 +1301,21 @@ function showDailyModal(info){
   const dEl = document.getElementById('daily');
   document.getElementById('dailyStreak').textContent = info.streak;
   document.getElementById('dailyCoins').textContent = info.reward.coins;
+  // 7日サイクルのドット表示
+  const dotsEl = document.getElementById('streakDots');
+  dotsEl.innerHTML = '';
+  for(let i=1; i<=7; i++){
+    const span = document.createElement('span');
+    span.className = 'dot';
+    if(i === 7) span.classList.add('gift');
+    if(i < info.day) span.classList.add('done');
+    if(i === info.day){
+      span.classList.add('today');
+      span.classList.remove('gift');
+    }
+    span.textContent = i;
+    dotsEl.appendChild(span);
+  }
   const bonus = document.getElementById('dailyBonus');
   if(info.reward.zenmetsu){
     bonus.classList.remove('hidden');
@@ -1119,7 +1323,9 @@ function showDailyModal(info){
     bonus.classList.add('hidden');
   }
   dEl.classList.remove('hidden');
+  sfx.daily();
   document.getElementById('dailyOk').onclick = ()=>{
+    sfx.tap();
     dEl.classList.add('hidden');
     refreshHome();
   };
@@ -1130,11 +1336,12 @@ function buyZenmetsu(){
   save.coins -= ZEN_PRICE;
   save.owned.zenmetsu = (save.owned.zenmetsu||0) + 1;
   SAVE.save(save);
+  sfx.buy();
   refreshHome();
 }
 
-startBtn.addEventListener('click', startGame);
-goHomeBtn.addEventListener('click', () => { showHome(); });
+startBtn.addEventListener('click', () => { sfx.tap(); startGame(); });
+goHomeBtn.addEventListener('click', () => { sfx.tap(); showHome(); });
 buyBtnEl.addEventListener('click', buyZenmetsu);
 
 function fit(){
