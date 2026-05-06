@@ -44,6 +44,17 @@
                     border-radius:10px;padding:8px 12px;}
   #home .history li{padding:3px 0;display:flex;justify-content:space-between;}
   #home .history li.empty{justify-content:center;opacity:.4;}
+  /* デイリーログイン */
+  #daily{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+         background:rgba(0,0,0,.78);z-index:20;}
+  #daily .box{background:#2a2a36;border:2px solid #ffcc33;border-radius:18px;padding:24px 30px;
+              text-align:center;max-width:280px;}
+  #daily h2{margin:0 0 10px;color:#ffd24a;}
+  #daily .day{font-size:13px;opacity:.7;margin:4px 0;}
+  #daily .amt{font-size:32px;font-weight:bold;color:#ffd24a;margin:8px 0;}
+  #daily .extra{color:#ffaa66;font-size:13px;margin-bottom:6px;}
+  #daily button{margin-top:14px;padding:10px 28px;border:none;border-radius:20px;
+                background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:15px;}
   /* ゲームオーバー画面 */
   #gameover{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
             flex-direction:column;background:rgba(0,0,0,.78);z-index:10;text-align:center;padding:24px;}
@@ -83,6 +94,17 @@
   <div class="history">
     <h3>さいきんのスコア</h3>
     <ol id="historyList"><li class="empty">まだ プレイ なし</li></ol>
+  </div>
+</div>
+
+<!-- デイリーログイン -->
+<div id="daily" class="hidden">
+  <div class="box">
+    <h2>🎁 ログインボーナス</h2>
+    <div class="day">れんぞく <span id="dailyStreak">1</span> にちめ</div>
+    <div class="amt">+ <span id="dailyCoins">0</span> 🪙</div>
+    <div class="extra hidden" id="dailyBonus">＋ ぜんめつ ×1</div>
+    <button id="dailyOk">うけとる</button>
   </div>
 </div>
 
@@ -166,7 +188,19 @@ const state = {
   itemMax: 3,
   scoreSinceItem: 0,
   lastPointer: {x:0, y:0, active:false},
+  combo: 0,
+  comboTimer: 0,
+  scoreFloaters: [],
 };
+
+const COMBO_TIMEOUT = 4000; // ms 連続正解の猶予
+function comboMul(c){
+  if(c >= 20) return 10;
+  if(c >= 10) return 5;
+  if(c >= 6)  return 3;
+  if(c >= 3)  return 2;
+  return 1;
+}
 
 // ホーム画面の表示更新
 function refreshHome(){
@@ -584,11 +618,18 @@ function placeBomb(bomb, zoneKey){
     bomb.state = 'placed';
     bomb.zone = zoneKey;
     bomb.pickTarget(zoneKey==='red' ? RED : BLK);
-    state.score = Math.min(9999, state.score + 1);
+    // コンボ
+    state.combo++;
+    state.comboTimer = 0;
+    const mul = comboMul(state.combo);
+    const before = state.score;
+    state.score = Math.min(9999, state.score + mul);
+    state.scoreFloaters.push({x: bomb.x, y: bomb.y - 10, val: mul, mul: mul, life: 900, max: 900});
     spawnParticles(bomb.x, bomb.y, '#ffffaa', 8);
     // 1点ごとに ごく ゆっくり早くなる
     state.spawnInterval = Math.max(480, state.spawnInterval * 0.988);
-    if(state.score % 8 === 0){
+    // レベル：8の倍数を跨いだら+1（コンボで複数跨ぐ場合に対応）
+    if(Math.floor(state.score/8) > Math.floor(before/8)){
       state.level++;
       state.spawnInterval = Math.max(480, state.spawnInterval - 45);
     }
@@ -878,6 +919,46 @@ function drawParticles(){
   ctx.globalAlpha = 1;
 }
 
+function drawScoreFloaters(){
+  state.scoreFloaters.forEach(f=>{
+    const a = Math.max(0, f.life / f.max);
+    ctx.globalAlpha = a;
+    ctx.fillStyle = f.mul >= 5 ? '#ff66cc' : f.mul >= 3 ? '#ffd24a' : f.mul >= 2 ? '#aaffaa' : '#ffffff';
+    ctx.font = 'bold ' + (14 + f.mul*2) + 'px system-ui';
+    ctx.textAlign = 'center';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#000';
+    ctx.strokeText(`+${f.val}`, f.x, f.y);
+    ctx.fillText(`+${f.val}`, f.x, f.y);
+  });
+  ctx.globalAlpha = 1;
+}
+
+function drawCombo(){
+  if(state.combo < 2) return;
+  const mul = comboMul(state.combo);
+  const x = W/2, y = HUD_H + 18;
+  ctx.save();
+  // 背景
+  const tier = mul >= 5 ? '#ff66cc' : mul >= 3 ? '#ffd24a' : '#88ddff';
+  ctx.fillStyle = 'rgba(0,0,0,.7)';
+  roundRect(x-58, y-12, 116, 28, 14, true, false);
+  ctx.strokeStyle = tier;
+  ctx.lineWidth = 2;
+  roundRect(x-58, y-12, 116, 28, 14, false, true);
+  // テキスト
+  ctx.fillStyle = tier;
+  ctx.font = 'bold 14px system-ui';
+  ctx.textAlign = 'center';
+  ctx.fillText(`COMBO ×${mul} (${state.combo})`, x, y+3);
+  // 残り時間バー
+  const ratio = 1 - state.comboTimer / COMBO_TIMEOUT;
+  ctx.fillStyle = tier;
+  ctx.globalAlpha = .8;
+  ctx.fillRect(x-50 + 100*(1-ratio)/2, y+10, 100*ratio, 3);
+  ctx.restore();
+}
+
 // ========= ループ =========
 let last = 0;
 function loop(t){
@@ -900,6 +981,17 @@ function loop(t){
       p.life -= dt;
     });
     state.particles = state.particles.filter(p=>p.life>0);
+    // コンボのタイムアウト
+    if(state.combo > 0){
+      state.comboTimer += dt;
+      if(state.comboTimer >= COMBO_TIMEOUT){
+        state.combo = 0;
+        state.comboTimer = 0;
+      }
+    }
+    // 浮きスコアの更新
+    state.scoreFloaters.forEach(f=>{ f.y -= dt*0.04; f.life -= dt; });
+    state.scoreFloaters = state.scoreFloaters.filter(f=>f.life>0);
   }
 
   ctx.save();
@@ -918,7 +1010,9 @@ function loop(t){
   const order = ['placed','wander','enter','drag'];
   state.bombs.slice().sort((a,b)=>order.indexOf(a.state)-order.indexOf(b.state)).forEach(b=>b.draw());
   drawParticles();
+  drawScoreFloaters();
   drawHud();
+  drawCombo();
   drawItem();
 
   if(state.flash>0){
@@ -946,6 +1040,9 @@ function startGame(){
   state.gameOver = false;
   // 持ち物からアイテムをセット
   state.itemCount = save.owned.zenmetsu || 0;
+  state.combo = 0;
+  state.comboTimer = 0;
+  state.scoreFloaters = [];
   hideHome();
   gameoverEl.classList.add('hidden');
 }
@@ -978,6 +1075,56 @@ function endGame(){
   gameoverEl.classList.remove('hidden');
 }
 
+// デイリーログイン
+function checkDailyBonus(){
+  const today = new Date();
+  const todayStr = today.getFullYear() + '-' +
+                   String(today.getMonth()+1).padStart(2,'0') + '-' +
+                   String(today.getDate()).padStart(2,'0');
+  const lastLogin = localStorage.getItem('bomb_lastLogin');
+  if(lastLogin === todayStr) return null;
+
+  let streak = +localStorage.getItem('bomb_loginStreak') || 0;
+  if(lastLogin){
+    const last = new Date(lastLogin + 'T00:00:00');
+    const t = new Date(todayStr + 'T00:00:00');
+    const dayDiff = Math.round((t - last) / 86400000);
+    if(dayDiff === 1) streak++;
+    else streak = 1;
+  } else {
+    streak = 1;
+  }
+  // 報酬テーブル（7日サイクル）
+  const day = ((streak - 1) % 7) + 1;
+  const coinsTable = [50, 75, 100, 150, 200, 300, 500];
+  const reward = { coins: coinsTable[day-1], zenmetsu: (day===7 ? 1 : 0) };
+  save.coins += reward.coins;
+  if(reward.zenmetsu){
+    save.owned.zenmetsu = (save.owned.zenmetsu||0) + reward.zenmetsu;
+  }
+  SAVE.save(save);
+  localStorage.setItem('bomb_lastLogin', todayStr);
+  localStorage.setItem('bomb_loginStreak', String(streak));
+  return { streak, day, reward };
+}
+
+function showDailyModal(info){
+  const dEl = document.getElementById('daily');
+  document.getElementById('dailyStreak').textContent = info.streak;
+  document.getElementById('dailyCoins').textContent = info.reward.coins;
+  const bonus = document.getElementById('dailyBonus');
+  if(info.reward.zenmetsu){
+    bonus.classList.remove('hidden');
+  } else {
+    bonus.classList.add('hidden');
+  }
+  dEl.classList.remove('hidden');
+  document.getElementById('dailyOk').onclick = ()=>{
+    dEl.classList.add('hidden');
+    refreshHome();
+  };
+}
+
 function buyZenmetsu(){
   if(save.coins < ZEN_PRICE) return;
   save.coins -= ZEN_PRICE;
@@ -1004,6 +1151,9 @@ fit();
 
 // 初期表示はホーム
 showHome();
+// デイリーログインチェック
+const dailyInfo = checkDailyBonus();
+if(dailyInfo) showDailyModal(dailyInfo);
 
 requestAnimationFrame(loop);
 
