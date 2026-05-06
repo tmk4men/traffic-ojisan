@@ -67,14 +67,27 @@ bestEl.textContent = state.best ? `さいこう: ${state.best}` : '';
 
 // ========= ばくだん =========
 class Bomb{
-  constructor(type){
+  constructor(type, side='left'){
     this.type = type;            // 'black' or 'red'
+    this.side = side;            // 'left' | 'right' | 'top' | 'bottom'
     this.r = 20;
-    this.x = -24;
-    this.y = FLOOR.y + 24 + Math.random()*(FLOOR.h-48);
+    if(side==='left'){
+      this.x = -24;
+      this.y = FLOOR.y + 24 + Math.random()*(FLOOR.h-48);
+    } else if(side==='right'){
+      this.x = W + 24;
+      this.y = FLOOR.y + 24 + Math.random()*(FLOOR.h-48);
+    } else if(side==='top'){
+      this.x = FLOOR.x + 24 + Math.random()*(FLOOR.w-48);
+      this.y = FLOOR.y - 24;
+    } else { // bottom = フロア下端から少し下、ゾーン手前
+      this.x = FLOOR.x + 24 + Math.random()*(FLOOR.w-48);
+      this.y = FLOOR.y + FLOOR.h + 16;
+    }
     this.state = 'enter';        // enter | wander | drag | placed
     this.zone = null;            // 'red' | 'black' (placed時)
-    this.fuseTime = 8500;
+    // レベルで導火線が短くなる：Lv1で8.5秒 → Lv10で約4秒
+    this.fuseTime = Math.max(3800, 8500 - (state.level-1) * 500);
     this.fuseLeft = this.fuseTime;
     this.targetX = 0;
     this.targetY = 0;
@@ -106,11 +119,23 @@ class Bomb{
     this.wiggle += dt*0.005;
     this.bobPhase += dt*0.01;
     if(this.state==='enter'){
-      // 左外から登場 → 場内へ歩く
-      this.x += dt*0.05;
-      this.facing = 1;
+      const sp = dt*0.05;
+      let arrived = false;
+      if(this.side==='left'){
+        this.x += sp; this.facing = 1;
+        if(this.x > FLOOR.x + 24) arrived = true;
+      } else if(this.side==='right'){
+        this.x -= sp; this.facing = -1;
+        if(this.x < FLOOR.x + FLOOR.w - 24) arrived = true;
+      } else if(this.side==='top'){
+        this.y += sp;
+        if(this.y > FLOOR.y + 24) arrived = true;
+      } else { // bottom
+        this.y -= sp;
+        if(this.y < FLOOR.y + FLOOR.h - 24) arrived = true;
+      }
       this.fuseLeft -= dt;
-      if(this.x > FLOOR.x + 24){
+      if(arrived){
         this.state = 'wander';
         this.pickTarget(FLOOR);
       }
@@ -196,9 +221,20 @@ class Bomb{
 }
 
 function spawnBomb(){
+  // レベルで出現口が増える
+  const sides = ['left'];
+  if(state.level >= 2) sides.push('right');
+  if(state.level >= 4) sides.push('top');
+  if(state.level >= 6) sides.push('bottom');
+  const side = sides[Math.floor(Math.random()*sides.length)];
   const type = Math.random() < 0.5 ? 'black' : 'red';
-  const b = new Bomb(type);
-  state.bombs.push(b);
+  state.bombs.push(new Bomb(type, side));
+  // 高レベルではたまに同時2体
+  if(state.level >= 5 && Math.random() < 0.25){
+    const s2 = sides[Math.floor(Math.random()*sides.length)];
+    const t2 = Math.random() < 0.5 ? 'black' : 'red';
+    state.bombs.push(new Bomb(t2, s2));
+  }
 }
 
 function spawnParticles(x,y,color,n=18){
@@ -236,9 +272,12 @@ function placeBomb(bomb, zoneKey){
     bomb.pickTarget(zoneKey==='red' ? RED : BLK);
     state.score = Math.min(9999, state.score + 1);
     spawnParticles(bomb.x, bomb.y, '#ffffaa', 8);
-    if(state.score % 8 === 0){
+    // 1点ごとに じわっと早くなる
+    state.spawnInterval = Math.max(280, state.spawnInterval * 0.96);
+    if(state.score % 5 === 0){
       state.level++;
-      state.spawnInterval = Math.max(380, state.spawnInterval - 80);
+      // レベルでさらに加速＋導火線も短く
+      state.spawnInterval = Math.max(280, state.spawnInterval - 90);
     }
   }else{
     // 誤投入：そのゾーンの全ボム＋本体が連鎖爆発
