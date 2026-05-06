@@ -22,7 +22,7 @@
 <div id="overlay">
   <h1>ばくだんをわけろ！</h1>
   <p>くろい ばくだん → くろい ばしょ<br>あかい ばくだん → あかい ばしょ</p>
-  <p class="small">ドラッグで うごかす<br>まちがえると ばくはつ！</p>
+  <p class="small">ドラッグで うごかす<br>まちがえると ばくはつ！<br>ちゃいろは さわるな きけん！</p>
   <p class="small" id="best"></p>
   <button id="start">スタート</button>
 </div>
@@ -68,7 +68,7 @@ bestEl.textContent = state.best ? `さいこう: ${state.best}` : '';
 // ========= ばくだん =========
 class Bomb{
   constructor(type, side='top', pos=0.5){
-    this.type = type;            // 'black' or 'red'
+    this.type = type;            // 'black' | 'red' | 'brown' (brown=触ると即終了)
     this.side = side;            // 'left' | 'right' | 'top'
     this.r = 20;
     if(side==='left'){
@@ -84,7 +84,10 @@ class Bomb{
     this.state = 'enter';        // enter | wander | drag | placed
     this.zone = null;            // 'red' | 'black' (placed時)
     // レベルで導火線が短くなる：Lv1で8.5秒 → Lv10で約4秒
-    this.fuseTime = Math.max(3800, 8500 - (state.level-1) * 500);
+    // 茶ばくだんは触らなければ安全。一定時間で去る。
+    this.fuseTime = (type==='brown')
+      ? 7000
+      : Math.max(3800, 8500 - (state.level-1) * 500);
     this.fuseLeft = this.fuseTime;
     this.targetX = 0;
     this.targetY = 0;
@@ -168,7 +171,13 @@ class Bomb{
       // 安全：fuseは進まない
     }
     if(this.fuseLeft<=0 && !this._exploded && this.state!=='placed'){
-      this._exploded = true;
+      if(this.type==='brown'){
+        // 触らなければ無事に去る
+        this._dead = true;
+        spawnParticles(this.x, this.y, '#a07a4e', 8);
+      } else {
+        this._exploded = true;
+      }
     }
   }
   draw(){
@@ -193,12 +202,22 @@ class Bomb{
     ctx.fillRect( 3,  this.r-2 + (stepUp>0?-2:0), 6, 6);
 
     // 本体
-    const baseCol = this.type==='black' ? '#1c1c22' : '#d24a64';
-    const hi = this.type==='black' ? '#3a3a48' : '#ff8aa3';
+    let baseCol, hi;
+    if(this.type==='black'){ baseCol='#1c1c22'; hi='#3a3a48'; }
+    else if(this.type==='red'){ baseCol='#d24a64'; hi='#ff8aa3'; }
+    else { baseCol='#7a5230'; hi='#a07a4e'; } // brown=危険
     ctx.fillStyle = blinkOn ? '#fff' : baseCol;
     ctx.beginPath(); ctx.arc(0,0,this.r,0,Math.PI*2); ctx.fill();
     ctx.fillStyle = blinkOn ? '#fff' : hi;
     ctx.beginPath(); ctx.arc(-7,-7,5,0,Math.PI*2); ctx.fill();
+
+    // 茶ばくだんの「触るな」マーク（赤い枠＋禁止記号）
+    if(this.type==='brown'){
+      // 赤いオーラ
+      ctx.strokeStyle = 'rgba(255,40,40,'+ (0.6+0.3*Math.sin(performance.now()*0.012)) +')';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0,0,this.r+3,0,Math.PI*2); ctx.stroke();
+    }
 
     // ねじまき
     ctx.fillStyle = '#caa84a';
@@ -213,12 +232,24 @@ class Bomb{
     ctx.stroke();
 
     // 目
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(-7,-2,5,7);
-    ctx.fillRect( 2,-2,5,7);
-    ctx.fillStyle = '#000';
-    ctx.fillRect(-6, 0,3,4);
-    ctx.fillRect( 3, 0,3,4);
+    if(this.type==='brown'){
+      // X 目（怒り）
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-8,-4); ctx.lineTo(-2, 2);
+      ctx.moveTo(-2,-4); ctx.lineTo(-8, 2);
+      ctx.moveTo( 2,-4); ctx.lineTo( 8, 2);
+      ctx.moveTo( 8,-4); ctx.lineTo( 2, 2);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(-7,-2,5,7);
+      ctx.fillRect( 2,-2,5,7);
+      ctx.fillStyle = '#000';
+      ctx.fillRect(-6, 0,3,4);
+      ctx.fillRect( 3, 0,3,4);
+    }
 
     // 口
     ctx.strokeStyle = '#000';
@@ -226,7 +257,10 @@ class Bomb{
     ctx.beginPath();
     if(this.type==='red'){
       ctx.arc(0,8,4,0.1*Math.PI,0.9*Math.PI);
-    }else{
+    } else if(this.type==='brown'){
+      // 怒り口（逆Vの牙）
+      ctx.moveTo(-4,10); ctx.lineTo(0,6); ctx.lineTo(4,10);
+    } else {
       ctx.moveTo(-3,9); ctx.lineTo(3,9);
     }
     ctx.stroke();
@@ -253,20 +287,23 @@ function pickPortal(){
   return open[Math.floor(Math.random()*open.length)];
 }
 
+function pickType(){
+  // 茶（触ると即終了）：Lv2 から たまに、レベルで微増。最大10%。
+  const brownChance = state.level >= 2 ? Math.min(0.10, 0.03 + state.level * 0.008) : 0;
+  if(Math.random() < brownChance) return 'brown';
+  return Math.random() < 0.5 ? 'black' : 'red';
+}
+
 function spawnBomb(){
   const p = pickPortal();
-  const type = Math.random() < 0.5 ? 'black' : 'red';
-  state.bombs.push(new Bomb(type, p.side, p.pos));
-  // 高レベルではたまに同時複数
+  state.bombs.push(new Bomb(pickType(), p.side, p.pos));
   if(state.level >= 5 && Math.random() < 0.30){
     const p2 = pickPortal();
-    const t2 = Math.random() < 0.5 ? 'black' : 'red';
-    state.bombs.push(new Bomb(t2, p2.side, p2.pos));
+    state.bombs.push(new Bomb(pickType(), p2.side, p2.pos));
   }
   if(state.level >= 9 && Math.random() < 0.25){
     const p3 = pickPortal();
-    const t3 = Math.random() < 0.5 ? 'black' : 'red';
-    state.bombs.push(new Bomb(t3, p3.side, p3.pos));
+    state.bombs.push(new Bomb(pickType(), p3.side, p3.pos));
   }
 }
 
@@ -343,13 +380,17 @@ function onDown(e){
   if(!state.running) return;
   e.preventDefault();
   const p = getPos(e);
-  // placed以外を優先（最前面から）
   for(let i=state.bombs.length-1;i>=0;i--){
     const b = state.bombs[i];
     if(b._dead) continue;
-    if(b.state==='placed') continue; // 配置済みはロック
+    if(b.state==='placed') continue;
     const dx = p.x-b.x, dy = p.y-b.y;
     if(dx*dx+dy*dy <= (b.r+10)*(b.r+10)){
+      // 茶ばくだんに触ったら即終了
+      if(b.type==='brown'){
+        explode(b);
+        return;
+      }
       state.dragging = b;
       state.dragOffset.x = b.x - p.x;
       state.dragOffset.y = b.y - p.y;
