@@ -371,11 +371,13 @@ function makeBomb(){
 }
 
 function spawnBomb(){
+  // 未仕分けの「場上のばくだん」上限：レベルに応じて伸ばすが頭打ち
+  const active = state.bombs.filter(b => !b._dead && b.state !== 'placed').length;
+  const maxActive = Math.min(5 + state.level, 12); // Lv1=6, Lv7=12（以降頭打ち）
+  if(active >= maxActive) return;
   state.bombs.push(makeBomb());
-  if(state.level >= 5 && Math.random() < 0.30){
-    state.bombs.push(makeBomb());
-  }
-  if(state.level >= 9 && Math.random() < 0.25){
+  // 同時2体は混雑が空いてる時だけ
+  if(active + 1 < maxActive && state.level >= 5 && Math.random() < 0.25){
     state.bombs.push(makeBomb());
   }
 }
