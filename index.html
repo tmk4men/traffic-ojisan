@@ -1040,7 +1040,7 @@ function drawChutes(){
     if(p.unlock > state.level) return;
     if(p.side !== 'top') return;
     const cx = FLOOR.x + 16 + (FLOOR.w-32) * p.pos;
-    const cy = FLOOR.y;
+    const cy = FLOOR.y + 10;   // 投入口を下げてフロアにめり込ませる
     // 影（厚み）
     ctx.fillStyle = 'rgba(0,0,0,.5)';
     roundRect(cx-16, cy-4, 32, 14, 4, true, false);
