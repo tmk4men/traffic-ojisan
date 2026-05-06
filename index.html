@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>ボムへいをわけろ！</title>
+<title>ばくだんをわけろ！</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;}
   html,body{margin:0;padding:0;height:100%;background:#222;overflow:hidden;font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;color:#fff;}
@@ -20,8 +20,8 @@
 <body>
 <div id="stage"><canvas id="cv" width="360" height="640"></canvas></div>
 <div id="overlay">
-  <h1>ボムへいをわけろ！</h1>
-  <p>くろい ボムへい → くろい ばしょ<br>あかい ボムへい → あかい ばしょ</p>
+  <h1>ばくだんをわけろ！</h1>
+  <p>くろい ばくだん → くろい ばしょ<br>あかい ばくだん → あかい ばしょ</p>
   <p class="small">ドラッグで うごかす<br>まちがえると ばくはつ！</p>
   <p class="small" id="best"></p>
   <button id="start">スタート</button>
@@ -371,7 +371,7 @@ function drawHud(){
   ctx.textAlign = 'right';
   ctx.fillText(`Lv.${state.level}`, W-12, 26);
   ctx.textAlign = 'center';
-  ctx.fillText('ボムへいをわけろ！', W/2, 26);
+  ctx.fillText('ばくだんをわけろ！', W/2, 26);
 }
 
 function drawParticles(){
