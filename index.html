@@ -746,9 +746,9 @@ function onMove(e){
   }
 }
 function onUp(e){
-  e.preventDefault();
   if(state.lastPointer) state.lastPointer.active = false;
   if(!state.dragging) return;
+  e.preventDefault();   // ドラッグ中だけ抑止（UIボタンのclickイベントを潰さない）
   const b = state.dragging;
   state.dragging = null;
   const z = zoneAt(b.x, b.y);
