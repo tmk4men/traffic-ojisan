@@ -22,7 +22,7 @@
 <div id="overlay">
   <h1>ばくだんをわけろ！</h1>
   <p>くろい ばくだん → くろい ばしょ<br>あかい ばくだん → あかい ばしょ</p>
-  <p class="small">ドラッグで うごかす<br>まちがえると ばくはつ！<br>ちゃいろは さわるな きけん！</p>
+  <p class="small">ドラッグで うごかす<br>まちがえると ばくはつ！<br>ちゃいろは さわるな きけん！<br>みぎした「ぜんめつ」で 一掃（25点ごとに+1）</p>
   <p class="small" id="best"></p>
   <button id="start">スタート</button>
 </div>
@@ -45,6 +45,10 @@ const ZONE_H = H - ZONE_Y - 8;
 const RED = {x:8,         y:ZONE_Y, w:W/2-12, h:ZONE_H, color:'#b8324a', edge:'#ff8090'}; // 左：あか
 const BLK = {x:W/2+4,     y:ZONE_Y, w:W/2-12, h:ZONE_H, color:'#1c1c22', edge:'#666680'}; // 右：くろ
 
+// アイテム枠（右下にオーバーレイ）
+const ITEM_SIZE = 56, ITEM_MARGIN = 8;
+const ITEM = {x: W - ITEM_SIZE - ITEM_MARGIN, y: H - ITEM_SIZE - ITEM_MARGIN, w: ITEM_SIZE, h: ITEM_SIZE};
+
 // state
 const state = {
   bombs: [],
@@ -61,6 +65,9 @@ const state = {
   flashColor: '#fff',
   particles: [],
   gameOver: false,
+  itemCount: 1,
+  itemMax: 3,
+  scoreSinceItem: 0,
 };
 
 bestEl.textContent = state.best ? `さいこう: ${state.best}` : '';
@@ -165,6 +172,35 @@ class Bomb{
       }
     }
     else if(this.state==='wander'){
+      // 茶は反対側へ一直線に抜ける（うろうろしない）
+      if(this.type==='brown'){
+        if(!this.exitSet){
+          if(this.side==='top'){
+            this.exitX = this.x;
+            this.exitY = FLOOR.y + FLOOR.h + 60;
+          } else if(this.side==='left'){
+            this.exitX = W + 40;
+            this.exitY = this.y;
+          } else { // right
+            this.exitX = -40;
+            this.exitY = this.y;
+          }
+          this.exitSet = true;
+        }
+        const dx = this.exitX - this.x, dy = this.exitY - this.y;
+        const d = Math.hypot(dx, dy);
+        const sp = 0.075 * this.speedMul * dt;
+        if(d > 1){
+          this.x += dx/d * Math.min(sp, d);
+          this.y += dy/d * Math.min(sp, d);
+          this.facing = dx >= 0 ? 1 : -1;
+        }
+        if(this.x < -36 || this.x > W+36 || this.y < -36 || this.y > H+36){
+          this._dead = true;
+        }
+        this.fuseLeft -= dt;
+        return;
+      }
       // 気まぐれダッシュ（dashy個体）
       if(this.dashy){
         if(this.dashing){
@@ -348,11 +384,11 @@ function pickPortal(){
 }
 
 function pickType(){
-  // 茶（触ると即終了）：Lv2 から たまに、レベルで微増。最大10%。
-  // ただし画面上に同時3個まで。
+  // 茶（触ると即終了）：Lv2 から たまに、レベルで微増。最大4%。
+  // 画面同時1体まで。
   const brownOnField = state.bombs.filter(b => b.type==='brown' && !b._dead).length;
-  const brownChance = (state.level >= 2 && brownOnField < 3)
-    ? Math.min(0.10, 0.03 + state.level * 0.008)
+  const brownChance = (state.level >= 2 && brownOnField < 1)
+    ? Math.min(0.04, 0.012 + state.level * 0.003)
     : 0;
   if(Math.random() < brownChance) return 'brown';
   return Math.random() < 0.5 ? 'black' : 'red';
@@ -423,6 +459,12 @@ function placeBomb(bomb, zoneKey){
       state.level++;
       state.spawnInterval = Math.max(480, state.spawnInterval - 45);
     }
+    // アイテム自動補充（25点ごとに+1、最大3）
+    state.scoreSinceItem++;
+    if(state.scoreSinceItem >= 25 && state.itemCount < state.itemMax){
+      state.scoreSinceItem = 0;
+      state.itemCount++;
+    }
   }else{
     // 誤投入：そのゾーンの全ボム＋本体が連鎖爆発
     explode(bomb);
@@ -441,6 +483,30 @@ function zoneAt(x,y){
   return null;
 }
 
+function pointInItem(x,y){
+  return x>=ITEM.x && x<=ITEM.x+ITEM.w && y>=ITEM.y && y<=ITEM.y+ITEM.h;
+}
+
+function useItem(){
+  if(state.itemCount <= 0) return;
+  state.itemCount--;
+  // 場上の未仕分けばくだんを全部除去（placed以外）
+  state.bombs.forEach(b=>{
+    if(b._dead) return;
+    if(b.state==='placed') return;
+    spawnParticles(b.x, b.y, '#ffffff', 14);
+    spawnParticles(b.x, b.y, '#ffd24a', 6);
+    b._dead = true;
+  });
+  // ドラッグ中だった場合の解放
+  if(state.dragging){
+    state.dragging = null;
+  }
+  state.flash = 0.7;
+  state.flashColor = '#ffffff';
+  state.shake = 14;
+}
+
 // ========= 入力 =========
 function getPos(e){
   const r = cv.getBoundingClientRect();
@@ -454,6 +520,11 @@ function onDown(e){
   if(!state.running) return;
   e.preventDefault();
   const p = getPos(e);
+  // アイテム枠タップ
+  if(pointInItem(p.x, p.y)){
+    useItem();
+    return;
+  }
   for(let i=state.bombs.length-1;i>=0;i--){
     const b = state.bombs[i];
     if(b._dead) continue;
@@ -576,6 +647,44 @@ function drawHud(){
   ctx.fillText('ばくだんをわけろ！', W/2, 23);
 }
 
+function drawItem(){
+  const x = ITEM.x, y = ITEM.y, s = ITEM.w;
+  const active = state.itemCount > 0;
+  ctx.save();
+  // 枠
+  ctx.fillStyle = active ? 'rgba(40,40,55,.92)' : 'rgba(30,30,40,.7)';
+  roundRect(x, y, s, s, 10, true, false);
+  ctx.strokeStyle = active ? '#ffd24a' : '#444';
+  ctx.lineWidth = 2;
+  roundRect(x, y, s, s, 10, false, true);
+  // アイコン：爆発バースト
+  const cx = x + s/2, cy = y + s/2 - 2;
+  ctx.fillStyle = active ? '#ffd24a' : '#666';
+  ctx.beginPath();
+  for(let i=0;i<10;i++){
+    const a = i*Math.PI*2/10;
+    const r = (i%2===0) ? 14 : 7;
+    const px = cx + Math.cos(a)*r;
+    const py = cy + Math.sin(a)*r;
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = active ? '#ff6644' : '#333';
+  ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2); ctx.fill();
+  // ×N 表記
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 13px system-ui';
+  ctx.textAlign = 'right';
+  ctx.fillText('×'+state.itemCount, x+s-5, y+s-5);
+  // ラベル
+  ctx.fillStyle = active ? '#ffd24a' : '#888';
+  ctx.font = 'bold 9px system-ui';
+  ctx.textAlign = 'center';
+  ctx.fillText('ぜんめつ', cx, y+10);
+  ctx.restore();
+}
+
 function drawParticles(){
   state.particles.forEach(p=>{
     const a = Math.max(0, p.life / p.max);
@@ -626,6 +735,7 @@ function loop(t){
   state.bombs.slice().sort((a,b)=>order.indexOf(a.state)-order.indexOf(b.state)).forEach(b=>b.draw());
   drawParticles();
   drawHud();
+  drawItem();
 
   if(state.flash>0){
     ctx.fillStyle = state.flashColor;
@@ -646,10 +756,12 @@ function startGame(){
   state.particles = [];
   state.score = 0;
   state.level = 1;
-  state.spawnInterval = 1600;
+  state.spawnInterval = 1900;
   state.spawnTimer = 0;
   state.running = true;
   state.gameOver = false;
+  state.itemCount = 1;
+  state.scoreSinceItem = 0;
   overlay.classList.add('hidden');
   overlay.querySelector('h1').textContent = 'ばくだんをわけろ！';
   overlay.querySelector('button').textContent = 'スタート';
