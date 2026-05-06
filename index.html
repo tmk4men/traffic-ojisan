@@ -51,7 +51,7 @@ const state = {
   score: 0,
   best: +localStorage.getItem('bomb_best') || 0,
   spawnTimer: 0,
-  spawnInterval: 1600,
+  spawnInterval: 1900,
   level: 1,
   running: false,
   dragging: null,
@@ -83,11 +83,11 @@ class Bomb{
     }
     this.state = 'enter';        // enter | wander | drag | placed
     this.zone = null;            // 'red' | 'black' (placed時)
-    // レベルで導火線が短くなる：Lv1で8.5秒 → Lv10で約4秒
+    // レベルで導火線が短くなる：Lv1で9.5秒 → 上限で5秒
     // 茶ばくだんは触らなければ安全。一定時間で去る。
     this.fuseTime = (type==='brown')
       ? 7000
-      : Math.max(3800, 8500 - (state.level-1) * 500);
+      : Math.max(5000, 9500 - (state.level-1) * 300);
     this.fuseLeft = this.fuseTime;
     this.targetX = 0;
     this.targetY = 0;
@@ -103,6 +103,12 @@ class Bomb{
     this.wanderMaxT = this.wanderMinT + 500 + Math.random()*1700;
     this.idleChance = 0.10 + Math.random()*0.30;        // 10〜40%でその場休憩
     this.bobAmp    = 1.0 + Math.random()*1.6;           // 上下ゆれ幅
+    // 気まぐれダッシュ（spawnBombで有効化）
+    this.dashy = false;
+    this.dashing = false;
+    this.dashCooldown = 1800 + Math.random()*2000;
+    this.dashLeft = 0;
+    this.dashVx = 0; this.dashVy = 0;
   }
   pickTarget(area){
     if(Math.random() < this.idleChance){
@@ -159,6 +165,35 @@ class Bomb{
       }
     }
     else if(this.state==='wander'){
+      // 気まぐれダッシュ（dashy個体）
+      if(this.dashy){
+        if(this.dashing){
+          this.x += this.dashVx * dt;
+          this.y += this.dashVy * dt;
+          this.facing = this.dashVx >= 0 ? 1 : -1;
+          this.x = Math.max(FLOOR.x+16, Math.min(FLOOR.x+FLOOR.w-16, this.x));
+          this.y = Math.max(FLOOR.y+16, Math.min(FLOOR.y+FLOOR.h-16, this.y));
+          this.dashLeft -= dt;
+          if(this.dashLeft <= 0){
+            this.dashing = false;
+            this.dashCooldown = 1800 + Math.random()*2200;
+            this.pickTarget(FLOOR);
+          }
+          this.fuseLeft -= dt;
+          return;
+        }
+        this.dashCooldown -= dt;
+        if(this.dashCooldown <= 0){
+          this.dashing = true;
+          const a = Math.random()*Math.PI*2;
+          const sp = 0.36 + Math.random()*0.18;
+          this.dashVx = Math.cos(a)*sp;
+          this.dashVy = Math.sin(a)*sp;
+          this.dashLeft = 220 + Math.random()*220;
+          this.fuseLeft -= dt;
+          return;
+        }
+      }
       this.wanderTimer -= dt;
       if(this.wanderTimer<=0) this.pickTarget(FLOOR);
       this.walkTo(dt, 0.04);
@@ -213,10 +248,35 @@ class Bomb{
 
     // 茶ばくだんの「触るな」マーク（赤い枠＋禁止記号）
     if(this.type==='brown'){
-      // 赤いオーラ
       ctx.strokeStyle = 'rgba(255,40,40,'+ (0.6+0.3*Math.sin(performance.now()*0.012)) +')';
       ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(0,0,this.r+3,0,Math.PI*2); ctx.stroke();
+    }
+    // 気まぐれボム（黄色マーク）
+    if(this.dashy){
+      const warn = !this.dashing && this.dashCooldown < 500;
+      const pulse = warn
+        ? 0.5 + 0.5*Math.sin(performance.now()*0.04)
+        : 0.5 + 0.3*Math.sin(performance.now()*0.008);
+      ctx.strokeStyle = 'rgba(255,220,40,'+ pulse +')';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.arc(0,0,this.r+3,0,Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]);
+      // ダッシュ中は速度線
+      if(this.dashing){
+        const len = 14;
+        const dx = this.dashVx, dy = this.dashVy;
+        const m = Math.hypot(dx,dy) || 1;
+        ctx.strokeStyle = 'rgba(255,220,40,.85)';
+        ctx.lineWidth = 2;
+        for(let i=-1;i<=1;i++){
+          ctx.beginPath();
+          ctx.moveTo(-dx/m*this.r*0.7 + i*4, -dy/m*this.r*0.7 + i*4);
+          ctx.lineTo(-dx/m*(this.r*0.7+len) + i*4, -dy/m*(this.r*0.7+len) + i*4);
+          ctx.stroke();
+        }
+      }
     }
 
     // ねじまき
@@ -294,16 +354,25 @@ function pickType(){
   return Math.random() < 0.5 ? 'black' : 'red';
 }
 
-function spawnBomb(){
+function makeBomb(){
   const p = pickPortal();
-  state.bombs.push(new Bomb(pickType(), p.side, p.pos));
+  const t = pickType();
+  const b = new Bomb(t, p.side, p.pos);
+  // 気まぐれダッシュ（黄色）：Lv3+ から低確率
+  if(t !== 'brown' && state.level >= 3 && Math.random() < Math.min(0.18, 0.06 + state.level*0.012)){
+    b.dashy = true;
+    b.dashCooldown = 2200 + Math.random()*2500; // 登場直後は少し溜め
+  }
+  return b;
+}
+
+function spawnBomb(){
+  state.bombs.push(makeBomb());
   if(state.level >= 5 && Math.random() < 0.30){
-    const p2 = pickPortal();
-    state.bombs.push(new Bomb(pickType(), p2.side, p2.pos));
+    state.bombs.push(makeBomb());
   }
   if(state.level >= 9 && Math.random() < 0.25){
-    const p3 = pickPortal();
-    state.bombs.push(new Bomb(pickType(), p3.side, p3.pos));
+    state.bombs.push(makeBomb());
   }
 }
 
@@ -342,12 +411,11 @@ function placeBomb(bomb, zoneKey){
     bomb.pickTarget(zoneKey==='red' ? RED : BLK);
     state.score = Math.min(9999, state.score + 1);
     spawnParticles(bomb.x, bomb.y, '#ffffaa', 8);
-    // 1点ごとに じわっと早くなる
-    state.spawnInterval = Math.max(280, state.spawnInterval * 0.96);
-    if(state.score % 5 === 0){
+    // 1点ごとに ごく ゆっくり早くなる
+    state.spawnInterval = Math.max(480, state.spawnInterval * 0.988);
+    if(state.score % 8 === 0){
       state.level++;
-      // レベルでさらに加速＋導火線も短く
-      state.spawnInterval = Math.max(280, state.spawnInterval - 90);
+      state.spawnInterval = Math.max(480, state.spawnInterval - 45);
     }
   }else{
     // 誤投入：そのゾーンの全ボム＋本体が連鎖爆発
