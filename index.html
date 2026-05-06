@@ -787,15 +787,20 @@ function roundRect(x,y,w,h,r,fill,stroke){
 function drawHud(){
   ctx.fillStyle = 'rgba(0,0,0,.55)';
   ctx.fillRect(0,0,W,HUD_H);
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 16px system-ui';
-  ctx.textAlign = 'left';
-  ctx.fillText(`SCORE ${state.score}`, 10, 23);
-  ctx.textAlign = 'right';
-  ctx.fillText(`Lv.${state.level}`, W-10, 23);
-  ctx.textAlign = 'center';
+  // SCORE（左）
+  const overBest = state.score > save.best;
+  ctx.fillStyle = overBest ? '#ffd24a' : '#fff';
   ctx.font = 'bold 15px system-ui';
-  ctx.fillText('ばくだんをわけろ！', W/2, 23);
+  ctx.textAlign = 'left';
+  ctx.fillText(`SCORE ${state.score}`, 10, 22);
+  // BEST（中央）
+  ctx.fillStyle = '#ffd24a';
+  ctx.textAlign = 'center';
+  ctx.fillText(`🏆 ${save.best}`, W/2, 22);
+  // Lv（右）
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'right';
+  ctx.fillText(`Lv.${state.level}`, W-10, 22);
 }
 
 function drawChutes(){
