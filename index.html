@@ -308,18 +308,8 @@ class Bomb{
         ctx.beginPath(); ctx.arc(0,0,this.r+8,0,Math.PI*2); ctx.fill();
       }
     }
-    // 気まぐれボム（黄色マーク）
+    // 気まぐれボム：ダッシュ中の速度線のみ
     if(this.dashy){
-      const warn = !this.dashing && this.dashCooldown < 500;
-      const pulse = warn
-        ? 0.5 + 0.5*Math.sin(performance.now()*0.04)
-        : 0.5 + 0.3*Math.sin(performance.now()*0.008);
-      ctx.strokeStyle = 'rgba(255,220,40,'+ pulse +')';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([4,3]);
-      ctx.beginPath(); ctx.arc(0,0,this.r+3,0,Math.PI*2); ctx.stroke();
-      ctx.setLineDash([]);
-      // ダッシュ中は速度線
       if(this.dashing){
         const len = 14;
         const dx = this.dashVx, dy = this.dashVy;
