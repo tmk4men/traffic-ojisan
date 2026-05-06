@@ -68,6 +68,7 @@ const state = {
   itemCount: 1,
   itemMax: 3,
   scoreSinceItem: 0,
+  lastPointer: {x:0, y:0, active:false},
 };
 
 bestEl.textContent = state.best ? `さいこう: ${state.best}` : '';
@@ -86,7 +87,7 @@ class Bomb{
       this.y = FLOOR.y + 16 + (FLOOR.h-32) * pos;
     } else { // top
       this.x = FLOOR.x + 16 + (FLOOR.w-32) * pos;
-      this.y = FLOOR.y - 24;
+      this.y = FLOOR.y + 4;   // 投入口から出てくる位置（低め）
     }
     this.state = 'enter';        // enter | wander | drag | placed
     this.zone = null;            // 'red' | 'black' (placed時)
@@ -116,6 +117,9 @@ class Bomb{
     this.dashCooldown = 1800 + Math.random()*2000;
     this.dashLeft = 0;
     this.dashVx = 0; this.dashVy = 0;
+    // 茶ばくだん用：上を通った指の総移動距離を蓄積（cm感覚）
+    this.swipeAccum = 0;     // px単位
+    this.hitFlash = 0;       // ヒット直後の閃光
   }
   pickTarget(area){
     if(Math.random() < this.idleChance){
@@ -152,6 +156,7 @@ class Bomb{
   update(dt){
     this.wiggle += dt*0.005;
     this.bobPhase += dt*0.01;
+    if(this.hitFlash > 0) this.hitFlash = Math.max(0, this.hitFlash - dt*0.003);
     if(this.state==='enter'){
       const sp = dt*0.05;
       let arrived = false;
@@ -282,11 +287,26 @@ class Bomb{
     ctx.fillStyle = blinkOn ? '#fff' : hi;
     ctx.beginPath(); ctx.arc(-7,-7,5,0,Math.PI*2); ctx.fill();
 
-    // 茶ばくだんの「触るな」マーク（赤い枠＋禁止記号）
+    // 茶ばくだんの「触るな」マーク（赤いオーラ＋ヒット蓄積メーター）
     if(this.type==='brown'){
-      ctx.strokeStyle = 'rgba(255,40,40,'+ (0.6+0.3*Math.sin(performance.now()*0.012)) +')';
+      const meter = Math.min(1, this.swipeAccum / 120);
+      // ベースの赤オーラ
+      ctx.strokeStyle = 'rgba(255,40,40,'+ (0.55 + 0.3*Math.sin(performance.now()*0.012)) +')';
       ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(0,0,this.r+3,0,Math.PI*2); ctx.stroke();
+      // 蓄積メーター（円弧）
+      if(meter > 0){
+        ctx.strokeStyle = '#ffdd44';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0,0,this.r+6, -Math.PI/2, -Math.PI/2 + Math.PI*2*meter);
+        ctx.stroke();
+      }
+      // ヒット直後の閃光
+      if(this.hitFlash > 0){
+        ctx.fillStyle = 'rgba(255,255,255,'+ (this.hitFlash*0.5) +')';
+        ctx.beginPath(); ctx.arc(0,0,this.r+8,0,Math.PI*2); ctx.fill();
+      }
     }
     // 気まぐれボム（黄色マーク）
     if(this.dashy){
@@ -525,17 +545,16 @@ function onDown(e){
     useItem();
     return;
   }
+  // 指の追跡を開始（茶ばくだんのスワイプ距離計測用）
+  state.lastPointer = {x:p.x, y:p.y, active:true};
+  // 起点が茶の上ならその瞬間の移動量0なのでカウントしない
   for(let i=state.bombs.length-1;i>=0;i--){
     const b = state.bombs[i];
     if(b._dead) continue;
     if(b.state==='placed') continue;
+    if(b.type==='brown') continue;   // 茶はつかめない（指を通すだけ）
     const dx = p.x-b.x, dy = p.y-b.y;
     if(dx*dx+dy*dy <= (b.r+10)*(b.r+10)){
-      // 茶ばくだんに触ったら即終了
-      if(b.type==='brown'){
-        explode(b);
-        return;
-      }
       state.dragging = b;
       state.dragOffset.x = b.x - p.x;
       state.dragOffset.y = b.y - p.y;
@@ -547,22 +566,47 @@ function onDown(e){
   }
 }
 function onMove(e){
-  if(!state.dragging) return;
+  if(!state.lastPointer || !state.lastPointer.active) {
+    if(!state.dragging) return;
+  }
   e.preventDefault();
   const p = getPos(e);
-  state.dragging.x = p.x + state.dragOffset.x;
-  state.dragging.y = p.y + state.dragOffset.y;
+  // 茶ばくだんの上を通った距離を蓄積（一定以上で爆発）
+  if(state.lastPointer && state.lastPointer.active){
+    const dx = p.x - state.lastPointer.x;
+    const dy = p.y - state.lastPointer.y;
+    const moved = Math.hypot(dx, dy);
+    if(moved > 0){
+      state.bombs.forEach(b=>{
+        if(b._dead || b.type !== 'brown' || b._exploded) return;
+        const bdx = p.x - b.x, bdy = p.y - b.y;
+        if(bdx*bdx + bdy*bdy <= (b.r+6)*(b.r+6)){
+          b.swipeAccum += moved;
+          b.hitFlash = 1;
+          if(b.swipeAccum >= 120){
+            explode(b);  // GAME OVER
+          }
+        }
+      });
+    }
+    state.lastPointer.x = p.x;
+    state.lastPointer.y = p.y;
+  }
+  if(state.dragging){
+    state.dragging.x = p.x + state.dragOffset.x;
+    state.dragging.y = p.y + state.dragOffset.y;
+  }
 }
 function onUp(e){
-  if(!state.dragging) return;
   e.preventDefault();
+  if(state.lastPointer) state.lastPointer.active = false;
+  if(!state.dragging) return;
   const b = state.dragging;
   state.dragging = null;
   const z = zoneAt(b.x, b.y);
   if(z){
     placeBomb(b, z);
   } else {
-    // ゾーン外でリリース → 徘徊に戻す
     b.state = 'wander';
     b.pickTarget(FLOOR);
   }
@@ -645,6 +689,33 @@ function drawHud(){
   ctx.textAlign = 'center';
   ctx.font = 'bold 15px system-ui';
   ctx.fillText('ばくだんをわけろ！', W/2, 23);
+}
+
+function drawChutes(){
+  // 解放済みの上ポータル位置に投入口を描画
+  ctx.save();
+  PORTALS.forEach(p=>{
+    if(p.unlock > state.level) return;
+    if(p.side !== 'top') return;
+    const cx = FLOOR.x + 16 + (FLOOR.w-32) * p.pos;
+    const cy = FLOOR.y;
+    // 影（厚み）
+    ctx.fillStyle = 'rgba(0,0,0,.5)';
+    roundRect(cx-16, cy-4, 32, 14, 4, true, false);
+    // 本体（外枠）
+    ctx.fillStyle = '#3b3b48';
+    roundRect(cx-16, cy-7, 32, 11, 4, true, false);
+    ctx.strokeStyle = '#caa84a';
+    ctx.lineWidth = 2;
+    roundRect(cx-16, cy-7, 32, 11, 4, false, true);
+    // 暗いスリット
+    ctx.fillStyle = '#08080d';
+    roundRect(cx-12, cy-3, 24, 6, 2, true, false);
+    // ハイライト
+    ctx.fillStyle = 'rgba(255,255,255,.18)';
+    ctx.fillRect(cx-10, cy-6, 20, 1);
+  });
+  ctx.restore();
 }
 
 function drawItem(){
@@ -730,6 +801,7 @@ function loop(t){
 
   drawBg();
   drawZones();
+  drawChutes();
   // 描画順：placed → wander → drag (drag最前面)
   const order = ['placed','wander','enter','drag'];
   state.bombs.slice().sort((a,b)=>order.indexOf(a.state)-order.indexOf(b.state)).forEach(b=>b.draw());
