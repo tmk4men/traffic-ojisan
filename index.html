@@ -9,22 +9,91 @@
   html,body{margin:0;padding:0;height:100%;background:#222;overflow:hidden;font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;color:#fff;}
   #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
   canvas{background:#000;touch-action:none;display:block;box-shadow:0 0 24px rgba(0,0,0,.6);}
-  #overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,.65);z-index:10;text-align:center;padding:24px;}
-  #overlay h1{font-size:28px;margin:0 0 8px;letter-spacing:.05em;}
-  #overlay p{margin:6px 0;font-size:14px;line-height:1.6;}
-  #overlay button{margin-top:18px;padding:12px 28px;font-size:18px;border:none;border-radius:24px;background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;}
-  #overlay.hidden{display:none;}
+  .hidden{display:none !important;}
   .small{font-size:12px;opacity:.7;}
+  /* ホーム画面 */
+  #home{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+        background:linear-gradient(180deg,#2c2c3a 0%,#1a1a26 100%);z-index:10;
+        padding:18px 16px;overflow-y:auto;}
+  #home h1{font-size:26px;margin:6px 0 10px;letter-spacing:.05em;color:#ffd24a;text-shadow:0 2px 0 #000;}
+  #home .stats{display:flex;gap:14px;margin:6px 0 10px;font-size:14px;}
+  #home .stats .pill{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);
+                     border-radius:16px;padding:6px 12px;}
+  #home .stats b{color:#ffcc33;margin-left:4px;}
+  #home .shop{width:100%;max-width:320px;margin:8px 0;}
+  #home .shop h3{margin:8px 0;font-size:14px;text-align:center;opacity:.7;letter-spacing:.2em;}
+  #home .shopItem{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+                  border-radius:12px;padding:10px 12px;margin-bottom:8px;}
+  #home .shopItem .row{display:flex;align-items:center;gap:10px;}
+  #home .shopItem .icon{width:42px;height:42px;border-radius:8px;background:#3a3a48;
+                        display:flex;align-items:center;justify-content:center;font-size:22px;}
+  #home .shopItem .info{flex:1;min-width:0;}
+  #home .shopItem .name{font-weight:bold;font-size:14px;}
+  #home .shopItem .desc{font-size:11px;opacity:.7;}
+  #home .shopItem .own{font-size:11px;color:#ffd24a;}
+  #home .shopItem button{margin-top:8px;width:100%;padding:8px;border:none;border-radius:18px;
+                         background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:13px;}
+  #home .shopItem button:disabled{background:#444;color:#888;cursor:not-allowed;}
+  #home #startBtn{margin-top:12px;padding:14px 36px;font-size:20px;border:none;border-radius:30px;
+                  background:#ff6644;color:#fff;font-weight:bold;cursor:pointer;
+                  box-shadow:0 4px 0 #993322;}
+  #home #startBtn:active{transform:translateY(2px);box-shadow:0 2px 0 #993322;}
+  #home .history{width:100%;max-width:320px;margin-top:12px;font-size:12px;}
+  #home .history h3{margin:6px 0;opacity:.7;letter-spacing:.2em;text-align:center;}
+  #home .history ol{list-style:none;padding:0;margin:0;background:rgba(0,0,0,.25);
+                    border-radius:10px;padding:8px 12px;}
+  #home .history li{padding:3px 0;display:flex;justify-content:space-between;}
+  #home .history li.empty{justify-content:center;opacity:.4;}
+  /* ゲームオーバー画面 */
+  #gameover{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+            flex-direction:column;background:rgba(0,0,0,.78);z-index:10;text-align:center;padding:24px;}
+  #gameover h1{font-size:32px;margin:0 0 10px;color:#ff6644;text-shadow:0 2px 0 #000;}
+  #gameover .big{font-size:40px;font-weight:bold;color:#ffd24a;margin:6px 0;}
+  #gameover .gain{font-size:16px;margin:4px 0;color:#ffaa66;}
+  #gameover button{margin-top:18px;padding:12px 28px;font-size:16px;border:none;border-radius:24px;
+                   background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;}
 </style>
 </head>
 <body>
 <div id="stage"><canvas id="cv" width="360" height="640"></canvas></div>
-<div id="overlay">
+
+<!-- ホーム画面 -->
+<div id="home">
   <h1>ばくだんをわけろ！</h1>
-  <p>くろい ばくだん → くろい ばしょ<br>あかい ばくだん → あかい ばしょ</p>
-  <p class="small">ドラッグで うごかす<br>まちがえると ばくはつ！<br>ちゃいろは さわるな きけん！<br>みぎした「ぜんめつ」で 一掃（25点ごとに+1）</p>
-  <p class="small" id="best"></p>
-  <button id="start">スタート</button>
+  <div class="stats">
+    <div class="pill">🏆 さいこう <b id="bestVal">0</b></div>
+    <div class="pill">🪙 コイン <b id="coinsVal">0</b></div>
+  </div>
+  <div class="shop">
+    <h3>ショップ</h3>
+    <div class="shopItem" data-item="zenmetsu">
+      <div class="row">
+        <div class="icon">💥</div>
+        <div class="info">
+          <div class="name">ぜんめつ</div>
+          <div class="desc">場のばくだんを いっせいに けす</div>
+          <div class="own">もちもの: <span class="ownCount">0</span> こ</div>
+        </div>
+      </div>
+      <button class="buyBtn">50 🪙 で 1こ かう</button>
+    </div>
+  </div>
+  <button id="startBtn">スタート</button>
+  <p class="small" style="margin-top:8px;opacity:.6;">ドラッグで うごかす／まちがえると ばくはつ／ちゃいろは さわるな！</p>
+  <div class="history">
+    <h3>さいきんのスコア</h3>
+    <ol id="historyList"><li class="empty">まだ プレイ なし</li></ol>
+  </div>
+</div>
+
+<!-- ゲームオーバー画面 -->
+<div id="gameover" class="hidden">
+  <h1>ばくはつ！</h1>
+  <p>スコア</p>
+  <div class="big" id="goScore">0</div>
+  <p class="gain">+ <b id="goCoins">0</b> コイン</p>
+  <p class="small" id="goBest"></p>
+  <button id="goHome">ホームへ</button>
 </div>
 <script>
 (() => {
@@ -32,10 +101,39 @@
 
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
-const overlay = document.getElementById('overlay');
-const startBtn = document.getElementById('start');
-const bestEl = document.getElementById('best');
+const homeEl = document.getElementById('home');
+const gameoverEl = document.getElementById('gameover');
+const startBtn = document.getElementById('startBtn');
+const goHomeBtn = document.getElementById('goHome');
+const bestValEl = document.getElementById('bestVal');
+const coinsValEl = document.getElementById('coinsVal');
+const ownCountEl = homeEl.querySelector('.shopItem[data-item="zenmetsu"] .ownCount');
+const buyBtnEl = homeEl.querySelector('.shopItem[data-item="zenmetsu"] .buyBtn');
+const historyListEl = document.getElementById('historyList');
+const goScoreEl = document.getElementById('goScore');
+const goCoinsEl = document.getElementById('goCoins');
+const goBestEl = document.getElementById('goBest');
 const W = cv.width, H = cv.height;
+
+// 永続データ
+const ZEN_PRICE = 50;
+const SAVE = {
+  load(){
+    return {
+      best: +localStorage.getItem('bomb_best') || 0,
+      coins: +localStorage.getItem('bomb_coins') || 0,
+      owned: JSON.parse(localStorage.getItem('bomb_owned') || '{"zenmetsu":1}'),
+      history: JSON.parse(localStorage.getItem('bomb_history') || '[]'),
+    };
+  },
+  save(s){
+    localStorage.setItem('bomb_best', s.best|0);
+    localStorage.setItem('bomb_coins', s.coins|0);
+    localStorage.setItem('bomb_owned', JSON.stringify(s.owned));
+    localStorage.setItem('bomb_history', JSON.stringify(s.history));
+  },
+};
+const save = SAVE.load();
 
 // レイアウト
 const HUD_H = 36;
@@ -53,7 +151,6 @@ const ITEM = {x: W - ITEM_SIZE - ITEM_MARGIN, y: H - ITEM_SIZE - ITEM_MARGIN, w:
 const state = {
   bombs: [],
   score: 0,
-  best: +localStorage.getItem('bomb_best') || 0,
   spawnTimer: 0,
   spawnInterval: 1900,
   level: 1,
@@ -71,7 +168,33 @@ const state = {
   lastPointer: {x:0, y:0, active:false},
 };
 
-bestEl.textContent = state.best ? `さいこう: ${state.best}` : '';
+// ホーム画面の表示更新
+function refreshHome(){
+  bestValEl.textContent = save.best;
+  coinsValEl.textContent = save.coins;
+  ownCountEl.textContent = (save.owned.zenmetsu||0);
+  buyBtnEl.disabled = save.coins < ZEN_PRICE;
+  buyBtnEl.textContent = (save.coins < ZEN_PRICE)
+    ? `コインが ${ZEN_PRICE} こ ひつよう`
+    : `${ZEN_PRICE} 🪙 で 1こ かう`;
+  // 履歴
+  if(save.history.length === 0){
+    historyListEl.innerHTML = '<li class="empty">まだ プレイ なし</li>';
+  } else {
+    historyListEl.innerHTML = save.history.slice(0,10).map((h,i)=>
+      `<li><span>#${i+1}</span><span>${h.score} てん</span></li>`
+    ).join('');
+  }
+}
+
+function showHome(){
+  homeEl.classList.remove('hidden');
+  gameoverEl.classList.add('hidden');
+  refreshHome();
+}
+function hideHome(){
+  homeEl.classList.add('hidden');
+}
 
 // ========= ばくだん =========
 class Bomb{
@@ -469,12 +592,6 @@ function placeBomb(bomb, zoneKey){
       state.level++;
       state.spawnInterval = Math.max(480, state.spawnInterval - 45);
     }
-    // アイテム自動補充（25点ごとに+1、最大3）
-    state.scoreSinceItem++;
-    if(state.scoreSinceItem >= 25 && state.itemCount < state.itemMax){
-      state.scoreSinceItem = 0;
-      state.itemCount++;
-    }
   }else{
     // 誤投入：そのゾーンの全ボム＋本体が連鎖爆発
     explode(bomb);
@@ -822,28 +939,51 @@ function startGame(){
   state.spawnTimer = 0;
   state.running = true;
   state.gameOver = false;
-  state.itemCount = 1;
-  state.scoreSinceItem = 0;
-  overlay.classList.add('hidden');
-  overlay.querySelector('h1').textContent = 'ばくだんをわけろ！';
-  overlay.querySelector('button').textContent = 'スタート';
+  // 持ち物からアイテムをセット
+  state.itemCount = save.owned.zenmetsu || 0;
+  hideHome();
+  gameoverEl.classList.add('hidden');
 }
 
 function endGame(){
   if(state.gameOver) return;
   state.gameOver = true;
   state.running = false;
-  if(state.score > state.best){
-    state.best = state.score;
-    localStorage.setItem('bomb_best', state.best);
+  // 報酬：スコア = コイン
+  const earned = state.score;
+  save.coins += earned;
+  // 持ち物：使い切ったぶんを永続化
+  save.owned.zenmetsu = state.itemCount;
+  // ベスト
+  let isNewBest = false;
+  if(state.score > save.best){
+    save.best = state.score;
+    isNewBest = true;
   }
-  bestEl.textContent = `さいこう: ${state.best}　／　こんかい: ${state.score}`;
-  overlay.querySelector('h1').textContent = 'ばくはつ！';
-  overlay.querySelector('button').textContent = 'もういちど';
-  overlay.classList.remove('hidden');
+  // 履歴
+  save.history.unshift({score: state.score, at: Date.now()});
+  if(save.history.length > 10) save.history.length = 10;
+  SAVE.save(save);
+  // ゲームオーバー画面
+  goScoreEl.textContent = state.score;
+  goCoinsEl.textContent = earned;
+  goBestEl.textContent = isNewBest
+    ? '🎉 ハイスコアこうしん！'
+    : `さいこう: ${save.best}`;
+  gameoverEl.classList.remove('hidden');
+}
+
+function buyZenmetsu(){
+  if(save.coins < ZEN_PRICE) return;
+  save.coins -= ZEN_PRICE;
+  save.owned.zenmetsu = (save.owned.zenmetsu||0) + 1;
+  SAVE.save(save);
+  refreshHome();
 }
 
 startBtn.addEventListener('click', startGame);
+goHomeBtn.addEventListener('click', () => { showHome(); });
+buyBtnEl.addEventListener('click', buyZenmetsu);
 
 function fit(){
   const stage = document.getElementById('stage');
@@ -856,6 +996,9 @@ function fit(){
 }
 window.addEventListener('resize', fit);
 fit();
+
+// 初期表示はホーム
+showHome();
 
 requestAnimationFrame(loop);
 
