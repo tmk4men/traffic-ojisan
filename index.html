@@ -244,7 +244,7 @@ class Bomb{
       this.y = FLOOR.y + 16 + (FLOOR.h-32) * pos;
     } else { // top
       this.x = FLOOR.x + 16 + (FLOOR.w-32) * pos;
-      this.y = FLOOR.y + 4;   // 投入口から出てくる位置（低め）
+      this.y = FLOOR.y + 18;  // 投入口の真下から出てくる
     }
     this.state = 'enter';        // enter | wander | drag | placed
     this.zone = null;            // 'red' | 'black' (placed時)
