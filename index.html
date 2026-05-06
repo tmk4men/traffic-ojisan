@@ -38,9 +38,12 @@ const bestEl = document.getElementById('best');
 const W = cv.width, H = cv.height;
 
 // レイアウト
-const BELT = {x:0, y:90, w:W, h:80};            // 上部ベルトコンベア
-const RED  = {x:8,   y:300, w:W/2-12, h:H-310, color:'#c0344a'};   // 左：あか（友達ボム）
-const BLK  = {x:W/2+4, y:300, w:W/2-12, h:H-310, color:'#1c1c22'}; // 右：くろ（通常ボム）
+const HUD_H = 36;
+const FLOOR = {x:6, y:HUD_H+8, w:W-12, h:328};   // 徘徊エリア（広め）
+const ZONE_Y = FLOOR.y + FLOOR.h + 8;
+const ZONE_H = H - ZONE_Y - 8;
+const RED = {x:8,         y:ZONE_Y, w:W/2-12, h:ZONE_H, color:'#b8324a', edge:'#ff8090'}; // 左：あか
+const BLK = {x:W/2+4,     y:ZONE_Y, w:W/2-12, h:ZONE_H, color:'#1c1c22', edge:'#666680'}; // 右：くろ
 
 // state
 const state = {
@@ -48,7 +51,7 @@ const state = {
   score: 0,
   best: +localStorage.getItem('bomb_best') || 0,
   spawnTimer: 0,
-  spawnInterval: 1400, // ms
+  spawnInterval: 1600,
   level: 1,
   running: false,
   dragging: null,
@@ -57,74 +60,107 @@ const state = {
   flash: 0,
   flashColor: '#fff',
   particles: [],
-  beltOffset: 0,
   gameOver: false,
 };
 
 bestEl.textContent = state.best ? `さいこう: ${state.best}` : '';
 
-// ========= ボムへい =========
+// ========= ばくだん =========
 class Bomb{
   constructor(type){
     this.type = type;            // 'black' or 'red'
-    this.r = 22;
-    this.x = -30;
-    this.y = BELT.y + BELT.h/2;
-    this.vx = 0;
-    this.vy = 0;
-    this.onBelt = true;
-    this.fuseTime = 7000;        // 爆発までの猶予 (ms)
+    this.r = 20;
+    this.x = -24;
+    this.y = FLOOR.y + 24 + Math.random()*(FLOOR.h-48);
+    this.state = 'enter';        // enter | wander | drag | placed
+    this.zone = null;            // 'red' | 'black' (placed時)
+    this.fuseTime = 8500;
     this.fuseLeft = this.fuseTime;
-    this.placed = false;
-    this.exploded = false;
+    this.targetX = 0;
+    this.targetY = 0;
+    this.wanderTimer = 0;
     this.wiggle = Math.random()*Math.PI*2;
+    this.bobPhase = Math.random()*Math.PI*2;
+    this.facing = 1;
+    this._dead = false;
+    this._exploded = false;
+  }
+  pickTarget(area){
+    const tx = area.x + 16 + Math.random()*Math.max(1,(area.w-32));
+    const ty = area.y + 16 + Math.random()*Math.max(1,(area.h-32));
+    this.targetX = tx;
+    this.targetY = ty;
+    this.wanderTimer = 800 + Math.random()*1200;
+  }
+  walkTo(dt, speed){
+    const dx = this.targetX - this.x, dy = this.targetY - this.y;
+    const d = Math.hypot(dx,dy);
+    if(d > 1){
+      const sp = speed * dt;
+      this.x += dx/d * Math.min(sp, d);
+      this.y += dy/d * Math.min(sp, d);
+      this.facing = dx >= 0 ? 1 : -1;
+    }
   }
   update(dt){
     this.wiggle += dt*0.005;
-    if(this.onBelt && !this.dragging){
-      // ベルト上：ゆっくり右に流れる
-      this.x += dt * 0.06;
-      if(this.x > W + 30){ // 流れ落ちたら導火線消費は早めに進めない
-        // ベルトの端に着いたら止まって自然待機
-        this.x = W - this.r - 4;
-        this.onBelt = false;
+    this.bobPhase += dt*0.01;
+    if(this.state==='enter'){
+      // 左外から登場 → 場内へ歩く
+      this.x += dt*0.05;
+      this.facing = 1;
+      this.fuseLeft -= dt;
+      if(this.x > FLOOR.x + 24){
+        this.state = 'wander';
+        this.pickTarget(FLOOR);
       }
     }
-    if(!this.placed){
+    else if(this.state==='wander'){
+      this.wanderTimer -= dt;
+      if(this.wanderTimer<=0) this.pickTarget(FLOOR);
+      this.walkTo(dt, 0.04);
       this.fuseLeft -= dt;
-      if(this.fuseLeft <= 0 && !this.exploded){
-        this.exploded = true;
-      }
+    }
+    else if(this.state==='placed'){
+      this.wanderTimer -= dt;
+      if(this.wanderTimer<=0) this.pickTarget(this.zone==='red' ? RED : BLK);
+      this.walkTo(dt, 0.025);
+      // 安全：fuseは進まない
+    }
+    if(this.fuseLeft<=0 && !this._exploded && this.state!=='placed'){
+      this._exploded = true;
     }
   }
   draw(){
-    const blink = this.fuseLeft < 2500;
-    const fast = this.fuseLeft < 1200;
+    const safe = this.state==='placed';
+    const blink = !safe && this.fuseLeft < 2500;
+    const fast  = !safe && this.fuseLeft < 1100;
     const blinkOn = blink ? (Math.floor(performance.now()/(fast?100:220))%2===0) : false;
-    const wob = Math.sin(this.wiggle)*1.5;
+    const wob = Math.sin(this.bobPhase)*1.6;
 
     ctx.save();
     ctx.translate(this.x, this.y + wob);
+    ctx.scale(this.facing, 1);
 
     // かげ
     ctx.fillStyle = 'rgba(0,0,0,.35)';
     ctx.beginPath(); ctx.ellipse(2, this.r+2, this.r*0.9, 4, 0, 0, Math.PI*2); ctx.fill();
 
-    // 足
+    // 足（歩いてる風に上下）
+    const stepUp = (Math.floor(this.bobPhase*2)%2===0) ? -1 : 1;
     ctx.fillStyle = '#3a2a18';
-    ctx.fillRect(-10, this.r-2, 6, 6);
-    ctx.fillRect( 4, this.r-2, 6, 6);
+    ctx.fillRect(-9,  this.r-2 + (stepUp>0?0:-2), 6, 6);
+    ctx.fillRect( 3,  this.r-2 + (stepUp>0?-2:0), 6, 6);
 
     // 本体
     const baseCol = this.type==='black' ? '#1c1c22' : '#d24a64';
     const hi = this.type==='black' ? '#3a3a48' : '#ff8aa3';
     ctx.fillStyle = blinkOn ? '#fff' : baseCol;
     ctx.beginPath(); ctx.arc(0,0,this.r,0,Math.PI*2); ctx.fill();
-    // ハイライト
     ctx.fillStyle = blinkOn ? '#fff' : hi;
     ctx.beginPath(); ctx.arc(-7,-7,5,0,Math.PI*2); ctx.fill();
 
-    // ねじまき（背中）
+    // ねじまき
     ctx.fillStyle = '#caa84a';
     ctx.beginPath(); ctx.arc(0,-this.r-2,3,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle = '#caa84a';
@@ -144,7 +180,7 @@ class Bomb{
     ctx.fillRect(-6, 0,3,4);
     ctx.fillRect( 3, 0,3,4);
 
-    // 口（友達ボムは笑顔）
+    // 口
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -162,7 +198,6 @@ class Bomb{
 function spawnBomb(){
   const type = Math.random() < 0.5 ? 'black' : 'red';
   const b = new Bomb(type);
-  b.x = -20;
   state.bombs.push(b);
 }
 
@@ -182,43 +217,44 @@ function spawnParticles(x,y,color,n=18){
   }
 }
 
-function explode(bomb, reason){
+function explode(bomb){
+  if(bomb._dead) return;
   spawnParticles(bomb.x, bomb.y, bomb.type==='black' ? '#ffaa33' : '#ff5577', 28);
   state.shake = 18;
   state.flash = 1;
   state.flashColor = '#ffd24a';
-  bomb.exploded = true;
+  bomb._exploded = true;
   bomb._dead = true;
-  // ゲームオーバー
   setTimeout(endGame, 400);
 }
 
-function placeBomb(bomb, zone){
-  const correct = (zone==='red' && bomb.type==='red') || (zone==='black' && bomb.type==='black');
+function placeBomb(bomb, zoneKey){
+  const correct = (zoneKey==='red' && bomb.type==='red') || (zoneKey==='black' && bomb.type==='black');
   if(correct){
-    bomb.placed = true;
-    bomb._dead = true;
+    bomb.state = 'placed';
+    bomb.zone = zoneKey;
+    bomb.pickTarget(zoneKey==='red' ? RED : BLK);
     state.score = Math.min(9999, state.score + 1);
-    spawnParticles(bomb.x, bomb.y, '#ffffaa', 10);
-    // レベル上昇
+    spawnParticles(bomb.x, bomb.y, '#ffffaa', 8);
     if(state.score % 8 === 0){
       state.level++;
       state.spawnInterval = Math.max(380, state.spawnInterval - 80);
     }
   }else{
-    // 誤投入：ゾーンの全ボムが連鎖爆発
-    explode(bomb, 'wrong-zone');
+    // 誤投入：そのゾーンの全ボム＋本体が連鎖爆発
+    explode(bomb);
     state.bombs.forEach(b=>{
       if(b._dead) return;
-      const z = zoneOfBomb(b);
-      if(z===zone) explode(b, 'chain');
+      if(b.state==='placed' && b.zone===zoneKey){
+        explode(b);
+      }
     });
   }
 }
 
-function zoneOfBomb(b){
-  if(b.x>=RED.x && b.x<=RED.x+RED.w && b.y>=RED.y && b.y<=RED.y+RED.h) return 'red';
-  if(b.x>=BLK.x && b.x<=BLK.x+BLK.w && b.y>=BLK.y && b.y<=BLK.y+BLK.h) return 'black';
+function zoneAt(x,y){
+  if(x>=RED.x && x<=RED.x+RED.w && y>=RED.y && y<=RED.y+RED.h) return 'red';
+  if(x>=BLK.x && x<=BLK.x+BLK.w && y>=BLK.y && y<=BLK.y+BLK.h) return 'black';
   return null;
 }
 
@@ -235,18 +271,17 @@ function onDown(e){
   if(!state.running) return;
   e.preventDefault();
   const p = getPos(e);
-  // 上から重なり優先（あとから描かれる新しいボムを優先）
+  // placed以外を優先（最前面から）
   for(let i=state.bombs.length-1;i>=0;i--){
     const b = state.bombs[i];
-    if(b._dead || b.placed) continue;
+    if(b._dead) continue;
+    if(b.state==='placed') continue; // 配置済みはロック
     const dx = p.x-b.x, dy = p.y-b.y;
-    if(dx*dx+dy*dy <= (b.r+8)*(b.r+8)){
+    if(dx*dx+dy*dy <= (b.r+10)*(b.r+10)){
       state.dragging = b;
       state.dragOffset.x = b.x - p.x;
       state.dragOffset.y = b.y - p.y;
-      b.dragging = true;
-      b.onBelt = false;
-      // 末尾に持ってきて最前面に
+      b.state = 'drag';
       state.bombs.splice(i,1);
       state.bombs.push(b);
       return;
@@ -264,15 +299,14 @@ function onUp(e){
   if(!state.dragging) return;
   e.preventDefault();
   const b = state.dragging;
-  b.dragging = false;
   state.dragging = null;
-  const z = zoneOfBomb(b);
-  if(z) placeBomb(b, z);
-  else {
-    // ゾーン外でリリース → ベルト上ならベルト復帰、それ以外ならその場待機
-    if(b.y < BELT.y + BELT.h + 10){
-      b.onBelt = true;
-    }
+  const z = zoneAt(b.x, b.y);
+  if(z){
+    placeBomb(b, z);
+  } else {
+    // ゾーン外でリリース → 徘徊に戻す
+    b.state = 'wander';
+    b.pickTarget(FLOOR);
   }
 }
 cv.addEventListener('mousedown', onDown);
@@ -285,68 +319,48 @@ window.addEventListener('touchcancel', onUp, {passive:false});
 
 // ========= 描画 =========
 function drawBg(){
-  // 工場床
   ctx.fillStyle = '#2a2a36';
   ctx.fillRect(0,0,W,H);
-  // 床のタイル
+  // フロアタイル
   ctx.strokeStyle = 'rgba(255,255,255,.04)';
   ctx.lineWidth = 1;
   for(let x=0;x<W;x+=24){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
   for(let y=0;y<H;y+=24){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
 }
 
-function drawBelt(){
-  // 本体
-  ctx.fillStyle = '#3b3b48';
-  ctx.fillRect(BELT.x, BELT.y, BELT.w, BELT.h);
-  // ローラー縞
-  ctx.fillStyle = '#1f1f28';
-  state.beltOffset = (state.beltOffset + 2) % 24;
-  for(let x=-24+state.beltOffset; x<W; x+=24){
-    ctx.fillRect(x, BELT.y+BELT.h-8, 12, 6);
-    ctx.fillRect(x, BELT.y+2, 12, 6);
-  }
-  // 縁
-  ctx.fillStyle = '#caa84a';
-  ctx.fillRect(BELT.x, BELT.y-4, BELT.w, 4);
-  ctx.fillRect(BELT.x, BELT.y+BELT.h, BELT.w, 4);
-}
-
 function drawZones(){
-  // あかゾーン
+  // あかカーペット
   ctx.fillStyle = RED.color;
-  roundRect(RED.x, RED.y, RED.w, RED.h, 14, true, false);
-  ctx.strokeStyle = '#ff8090';
-  ctx.lineWidth = 3;
-  roundRect(RED.x, RED.y, RED.w, RED.h, 14, false, true);
-  // くろゾーン
+  roundRect(RED.x, RED.y, RED.w, RED.h, 10, true, false);
+  ctx.strokeStyle = RED.edge; ctx.lineWidth = 3;
+  roundRect(RED.x, RED.y, RED.w, RED.h, 10, false, true);
+  // くろカーペット
   ctx.fillStyle = BLK.color;
-  roundRect(BLK.x, BLK.y, BLK.w, BLK.h, 14, true, false);
-  ctx.strokeStyle = '#666680';
-  ctx.lineWidth = 3;
-  roundRect(BLK.x, BLK.y, BLK.w, BLK.h, 14, false, true);
+  roundRect(BLK.x, BLK.y, BLK.w, BLK.h, 10, true, false);
+  ctx.strokeStyle = BLK.edge; ctx.lineWidth = 3;
+  roundRect(BLK.x, BLK.y, BLK.w, BLK.h, 10, false, true);
 
-  // アイコン
+  // 半透明アイコン
   ctx.save();
-  ctx.globalAlpha = .35;
+  ctx.globalAlpha = .25;
   drawZoneIcon(RED.x+RED.w/2, RED.y+RED.h/2, '#ff5577');
   drawZoneIcon(BLK.x+BLK.w/2, BLK.y+BLK.h/2, '#000');
   ctx.restore();
 
   // ラベル
   ctx.fillStyle = '#fff';
-  ctx.font = 'bold 16px system-ui';
+  ctx.font = 'bold 14px system-ui';
   ctx.textAlign = 'center';
-  ctx.fillText('あか', RED.x+RED.w/2, RED.y+22);
-  ctx.fillText('くろ', BLK.x+BLK.w/2, BLK.y+22);
+  ctx.fillText('あか', RED.x+RED.w/2, RED.y+18);
+  ctx.fillText('くろ', BLK.x+BLK.w/2, BLK.y+18);
 }
 
 function drawZoneIcon(cx,cy,col){
   ctx.fillStyle = col;
-  ctx.beginPath(); ctx.arc(cx,cy,40,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,30,0,Math.PI*2); ctx.fill();
   ctx.fillStyle = '#fff';
-  ctx.fillRect(cx-12,cy-4,8,12);
-  ctx.fillRect(cx+4 ,cy-4,8,12);
+  ctx.fillRect(cx-10,cy-3,7,10);
+  ctx.fillRect(cx+3 ,cy-3,7,10);
 }
 
 function roundRect(x,y,w,h,r,fill,stroke){
@@ -362,16 +376,17 @@ function roundRect(x,y,w,h,r,fill,stroke){
 }
 
 function drawHud(){
-  ctx.fillStyle = 'rgba(0,0,0,.5)';
-  ctx.fillRect(0,0,W,40);
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.fillRect(0,0,W,HUD_H);
   ctx.fillStyle = '#fff';
-  ctx.font = 'bold 18px system-ui';
+  ctx.font = 'bold 16px system-ui';
   ctx.textAlign = 'left';
-  ctx.fillText(`SCORE ${state.score}`, 12, 26);
+  ctx.fillText(`SCORE ${state.score}`, 10, 23);
   ctx.textAlign = 'right';
-  ctx.fillText(`Lv.${state.level}`, W-12, 26);
+  ctx.fillText(`Lv.${state.level}`, W-10, 23);
   ctx.textAlign = 'center';
-  ctx.fillText('ばくだんをわけろ！', W/2, 26);
+  ctx.font = 'bold 15px system-ui';
+  ctx.fillText('ばくだんをわけろ！', W/2, 23);
 }
 
 function drawParticles(){
@@ -395,15 +410,11 @@ function loop(t){
       state.spawnTimer = 0;
       spawnBomb();
     }
-    state.bombs.forEach(b=>b.update(dt));
+    state.bombs.forEach(b=>{ if(b.state!=='drag') b.update(dt); });
     state.bombs.forEach(b=>{
-      if(b.exploded && !b._dead){
-        explode(b, 'fuse');
-      }
+      if(b._exploded && !b._dead) explode(b);
     });
-    // 死んだボムの掃除
     state.bombs = state.bombs.filter(b=>!b._dead);
-    // パーティクル
     state.particles.forEach(p=>{
       p.x += p.vx; p.y += p.vy;
       p.vy += 0.2;
@@ -412,7 +423,6 @@ function loop(t){
     state.particles = state.particles.filter(p=>p.life>0);
   }
 
-  // 画面ゆれ
   ctx.save();
   if(state.shake>0){
     const sx = (Math.random()-0.5)*state.shake;
@@ -424,8 +434,9 @@ function loop(t){
 
   drawBg();
   drawZones();
-  drawBelt();
-  state.bombs.forEach(b=>b.draw());
+  // 描画順：placed → wander → drag (drag最前面)
+  const order = ['placed','wander','enter','drag'];
+  state.bombs.slice().sort((a,b)=>order.indexOf(a.state)-order.indexOf(b.state)).forEach(b=>b.draw());
   drawParticles();
   drawHud();
 
@@ -448,11 +459,13 @@ function startGame(){
   state.particles = [];
   state.score = 0;
   state.level = 1;
-  state.spawnInterval = 1400;
+  state.spawnInterval = 1600;
   state.spawnTimer = 0;
   state.running = true;
   state.gameOver = false;
   overlay.classList.add('hidden');
+  overlay.querySelector('h1').textContent = 'ばくだんをわけろ！';
+  overlay.querySelector('button').textContent = 'スタート';
 }
 
 function endGame(){
@@ -471,7 +484,6 @@ function endGame(){
 
 startBtn.addEventListener('click', startGame);
 
-// canvas を画面にフィット
 function fit(){
   const stage = document.getElementById('stage');
   const sw = stage.clientWidth, sh = stage.clientHeight;
