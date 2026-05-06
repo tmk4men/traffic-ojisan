@@ -41,6 +41,24 @@
                   background:#ff6644;color:#fff;font-weight:bold;cursor:pointer;
                   box-shadow:0 4px 0 #993322;}
   #home #startBtn:active{transform:translateY(2px);box-shadow:0 2px 0 #993322;}
+  #home .useTicket{width:100%;max-width:320px;margin:8px 0;background:rgba(255,102,204,.12);
+                    border:1px solid rgba(255,102,204,.5);border-radius:10px;padding:8px 12px;
+                    font-size:13px;}
+  #home .useTicket label{display:flex;align-items:center;gap:6px;cursor:pointer;}
+  #home .useTicket input{transform:scale(1.2);}
+  #home .missions{width:100%;max-width:320px;margin-top:14px;}
+  #home .missions h3{margin:6px 0;font-size:13px;text-align:center;opacity:.8;letter-spacing:.2em;color:#88ddff;}
+  #home .missions ul{list-style:none;padding:0;margin:0;}
+  #home .missions li{background:rgba(136,221,255,.08);border:1px solid rgba(136,221,255,.25);
+                     border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:12px;}
+  #home .missions li.done{background:rgba(136,221,136,.15);border-color:rgba(136,221,136,.5);opacity:.85;}
+  #home .missions .mLine1{display:flex;align-items:center;gap:6px;font-weight:bold;}
+  #home .missions .mLine1 .name{flex:1;}
+  #home .missions .mLine1 .reward{color:#ffd24a;font-size:11px;}
+  #home .missions .mBar{height:5px;background:rgba(0,0,0,.3);border-radius:3px;margin-top:4px;overflow:hidden;}
+  #home .missions .mBar .mFill{height:100%;background:#88ddff;}
+  #home .missions li.done .mBar .mFill{background:#88dd88;}
+  #home .missions .mProgress{font-size:10px;opacity:.7;margin-top:2px;text-align:right;}
   #home .history{width:100%;max-width:320px;margin-top:12px;font-size:12px;}
   #home .history h3{margin:6px 0;opacity:.7;letter-spacing:.2em;text-align:center;}
   #home .history ol{list-style:none;padding:0;margin:0;background:rgba(0,0,0,.25);
@@ -105,6 +123,22 @@
       <rect x="11" y="7.5" width="2" height="4" fill="#ffd24a"/>
       <path d="M8 7.5c-2.5-3 0-4.5 4-1.5 4-3 6.5-1.5 4 1.5z" fill="#ffd24a" stroke="#a06c10" stroke-width="0.6" stroke-linejoin="round"/>
     </symbol>
+    <symbol id="ic-x2" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" fill="#ff66cc" stroke="#7a1e62" stroke-width="1.4"/>
+      <text x="12" y="16" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#fff">×2</text>
+    </symbol>
+    <symbol id="ic-target" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" fill="none" stroke="#88ddff" stroke-width="2"/>
+      <circle cx="12" cy="12" r="6" fill="none" stroke="#88ddff" stroke-width="1.5"/>
+      <circle cx="12" cy="12" r="2.5" fill="#ff6644"/>
+    </symbol>
+    <symbol id="ic-check" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" fill="#88dd88" stroke="#3a7a3a" stroke-width="1.2"/>
+      <path d="M7 12l3.5 3.5L17 9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="ic-bonus" viewBox="0 0 24 24">
+      <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z" fill="#ffd24a" stroke="#a06c10" stroke-width="0.8" stroke-linejoin="round"/>
+    </symbol>
     <symbol id="ic-party" viewBox="0 0 24 24">
       <path d="M3 21l5.5-15 11 11z" fill="#ff6644" stroke="#a52a1a" stroke-width="0.6" stroke-linejoin="round"/>
       <path d="M5 16l2 2-3 3z" fill="#ffd24a"/>
@@ -138,9 +172,32 @@
       </div>
       <button class="buyBtn">50 <svg class="ic"><use href="#ic-coin"/></svg> で 1こ かう</button>
     </div>
+    <div class="shopItem" data-item="coindouble">
+      <div class="row">
+        <div class="icon"><svg class="ic ic-lg"><use href="#ic-x2"/></svg></div>
+        <div class="info">
+          <div class="name">2ばいチケット</div>
+          <div class="desc">そのゲームの こうかい コインが 2ばいに</div>
+          <div class="own">もちもの: <span class="ownCount">0</span> こ</div>
+        </div>
+      </div>
+      <button class="buyBtn">100 <svg class="ic"><use href="#ic-coin"/></svg> で 1こ かう</button>
+    </div>
+  </div>
+  <div class="useTicket hidden" id="useTicketBox">
+    <label>
+      <input type="checkbox" id="useTicketChk">
+      <svg class="ic"><use href="#ic-x2"/></svg>
+      2ばいチケットを つかう
+      <span class="small">（もちもの <span id="ticketCount">0</span> こ）</span>
+    </label>
   </div>
   <button id="startBtn">スタート</button>
   <p class="small" style="margin-top:8px;opacity:.6;">ドラッグで うごかす／まちがえると ばくはつ／ちゃいろは さわるな！</p>
+  <div class="missions">
+    <h3>きょうのチャレンジ</h3>
+    <ul id="missionList"></ul>
+  </div>
   <div class="history">
     <h3>さいきんのスコア</h3>
     <ol id="historyList"><li class="empty">まだ プレイ なし</li></ol>
@@ -180,8 +237,9 @@ const startBtn = document.getElementById('startBtn');
 const goHomeBtn = document.getElementById('goHome');
 const bestValEl = document.getElementById('bestVal');
 const coinsValEl = document.getElementById('coinsVal');
-const ownCountEl = homeEl.querySelector('.shopItem[data-item="zenmetsu"] .ownCount');
-const buyBtnEl = homeEl.querySelector('.shopItem[data-item="zenmetsu"] .buyBtn');
+const buyZenBtnEl = homeEl.querySelector('.shopItem[data-item="zenmetsu"] .buyBtn');
+const buyTcBtnEl = homeEl.querySelector('.shopItem[data-item="coindouble"] .buyBtn');
+const useTicketChk = document.getElementById('useTicketChk');
 const historyListEl = document.getElementById('historyList');
 const goScoreEl = document.getElementById('goScore');
 const goCoinsEl = document.getElementById('goCoins');
@@ -190,13 +248,17 @@ const W = cv.width, H = cv.height;
 
 // 永続データ
 const ZEN_PRICE = 50;
+const TICKET_PRICE = 100;
 const SAVE = {
   load(){
+    const owned = JSON.parse(localStorage.getItem('bomb_owned') || '{"zenmetsu":1}');
+    if(typeof owned.coinDouble !== 'number') owned.coinDouble = 0;
     return {
       best: +localStorage.getItem('bomb_best') || 0,
       coins: +localStorage.getItem('bomb_coins') || 0,
-      owned: JSON.parse(localStorage.getItem('bomb_owned') || '{"zenmetsu":1}'),
+      owned,
       history: JSON.parse(localStorage.getItem('bomb_history') || '[]'),
+      daily: JSON.parse(localStorage.getItem('bomb_daily') || 'null'),
     };
   },
   save(s){
@@ -204,6 +266,7 @@ const SAVE = {
     localStorage.setItem('bomb_coins', s.coins|0);
     localStorage.setItem('bomb_owned', JSON.stringify(s.owned));
     localStorage.setItem('bomb_history', JSON.stringify(s.history));
+    if(s.daily) localStorage.setItem('bomb_daily', JSON.stringify(s.daily));
   },
 };
 const save = SAVE.load();
@@ -321,6 +384,9 @@ const state = {
   combo: 0,
   comboTimer: 0,
   scoreFloaters: [],
+  runStats: {maxCombo:0, brownAvoided:0, itemsUsed:0},
+  coinDoubleActive: false,
+  bonus: {active:false, timeLeft:0, coinsThisStage:0},
 };
 
 const COMBO_TIMEOUT = 1400; // ms 連続正解の猶予
@@ -332,15 +398,119 @@ function comboMul(c){
   return 1;
 }
 
+// デイリーチャレンジ
+const MISSION_POOL = [
+  {id:'combo', target:5,  desc:'コンボ 5れんぞく',     reward:{coins:80}},
+  {id:'combo', target:10, desc:'コンボ 10れんぞく',    reward:{coins:200, items:{zenmetsu:1}}},
+  {id:'combo', target:15, desc:'コンボ 15れんぞく',    reward:{coins:300, items:{coinDouble:1}}},
+  {id:'score', target:30, desc:'1ゲームで 30てん',     reward:{coins:80}},
+  {id:'score', target:80, desc:'1ゲームで 80てん',     reward:{coins:200, items:{coinDouble:1}}},
+  {id:'score', target:150,desc:'1ゲームで 150てん',    reward:{coins:400, items:{zenmetsu:2}}},
+  {id:'brown', target:3,  desc:'ちゃいろを 3体 スルー',reward:{coins:120}},
+  {id:'brown', target:5,  desc:'ちゃいろを 5体 スルー',reward:{coins:200}},
+  {id:'item',  target:1,  desc:'アイテムを 1かい つかう', reward:{coins:60}},
+];
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function ensureDailyMissions(){
+  const t = todayStr();
+  if(!save.daily || save.daily.date !== t){
+    // 3つランダム抽選（重複なし）
+    const pool = [...MISSION_POOL];
+    const picks = [];
+    for(let i=0;i<3 && pool.length>0;i++){
+      const idx = Math.floor(Math.random()*pool.length);
+      picks.push({...pool[idx], progress:0, done:false, claimed:false});
+      pool.splice(idx,1);
+    }
+    save.daily = {date:t, missions:picks};
+    SAVE.save(save);
+  }
+}
+
+function evaluateMissionsAfterRun(){
+  if(!save.daily) return [];
+  const newlyDone = [];
+  save.daily.missions.forEach(m=>{
+    if(m.done) return;
+    let val = 0;
+    if(m.id==='combo')  val = state.runStats.maxCombo;
+    if(m.id==='score')  val = state.score;
+    if(m.id==='brown')  val = state.runStats.brownAvoided;
+    if(m.id==='item')   val = state.runStats.itemsUsed;
+    if(val > m.progress) m.progress = val;
+    if(m.progress >= m.target && !m.done){
+      m.done = true;
+      newlyDone.push(m);
+      // 報酬付与
+      save.coins += m.reward.coins;
+      if(m.reward.items?.zenmetsu) save.owned.zenmetsu += m.reward.items.zenmetsu;
+      if(m.reward.items?.coinDouble) save.owned.coinDouble += m.reward.items.coinDouble;
+    }
+  });
+  return newlyDone;
+}
+
+function rewardLabel(r){
+  let s = `+${r.coins}`;
+  if(r.items?.zenmetsu) s += ` +ぜんめつ×${r.items.zenmetsu}`;
+  if(r.items?.coinDouble) s += ` +2ばい×${r.items.coinDouble}`;
+  return s;
+}
+
+function renderMissions(){
+  const ul = document.getElementById('missionList');
+  if(!save.daily){ ul.innerHTML = ''; return; }
+  ul.innerHTML = save.daily.missions.map(m=>{
+    const ratio = Math.min(1, m.progress / m.target);
+    const icon = m.done ? '#ic-check' : '#ic-target';
+    return `<li class="${m.done?'done':''}">
+      <div class="mLine1">
+        <svg class="ic"><use href="${icon}"/></svg>
+        <span class="name">${m.desc}</span>
+        <span class="reward">${rewardLabel(m.reward)}</span>
+      </div>
+      <div class="mBar"><div class="mFill" style="width:${ratio*100}%"></div></div>
+      <div class="mProgress">${m.progress}/${m.target}</div>
+    </li>`;
+  }).join('');
+}
+
 // ホーム画面の表示更新
 function refreshHome(){
   bestValEl.textContent = save.best;
   coinsValEl.textContent = save.coins;
-  ownCountEl.textContent = (save.owned.zenmetsu||0);
-  buyBtnEl.disabled = save.coins < ZEN_PRICE;
-  buyBtnEl.innerHTML = (save.coins < ZEN_PRICE)
+  // ぜんめつ
+  const zenItem = homeEl.querySelector('.shopItem[data-item="zenmetsu"]');
+  zenItem.querySelector('.ownCount').textContent = (save.owned.zenmetsu||0);
+  const zenBtn = zenItem.querySelector('.buyBtn');
+  zenBtn.disabled = save.coins < ZEN_PRICE;
+  zenBtn.innerHTML = (save.coins < ZEN_PRICE)
     ? `コインが ${ZEN_PRICE - save.coins} こ たりない`
     : `${ZEN_PRICE} <svg class="ic"><use href="#ic-coin"/></svg> で 1こ かう`;
+  // 2倍チケット
+  const tcItem = homeEl.querySelector('.shopItem[data-item="coindouble"]');
+  tcItem.querySelector('.ownCount').textContent = (save.owned.coinDouble||0);
+  const tcBtn = tcItem.querySelector('.buyBtn');
+  tcBtn.disabled = save.coins < TICKET_PRICE;
+  tcBtn.innerHTML = (save.coins < TICKET_PRICE)
+    ? `コインが ${TICKET_PRICE - save.coins} こ たりない`
+    : `${TICKET_PRICE} <svg class="ic"><use href="#ic-coin"/></svg> で 1こ かう`;
+  // 使用トグル
+  const useBox = document.getElementById('useTicketBox');
+  document.getElementById('ticketCount').textContent = (save.owned.coinDouble||0);
+  if(save.owned.coinDouble > 0){
+    useBox.classList.remove('hidden');
+  } else {
+    useBox.classList.add('hidden');
+    document.getElementById('useTicketChk').checked = false;
+  }
+  // ミッション
+  renderMissions();
   // 履歴
   if(save.history.length === 0){
     historyListEl.innerHTML = '<li class="empty">まだ プレイ なし</li>';
@@ -352,6 +522,7 @@ function refreshHome(){
 }
 
 function showHome(){
+  ensureDailyMissions();
   homeEl.classList.remove('hidden');
   gameoverEl.classList.add('hidden');
   refreshHome();
@@ -489,6 +660,7 @@ class Bomb{
         }
         if(this.x < -36 || this.x > W+36 || this.y < -36 || this.y > H+36){
           this._dead = true;
+          if(state.runStats) state.runStats.brownAvoided++;
         }
         this.fuseLeft -= dt;
         return;
@@ -535,9 +707,9 @@ class Bomb{
     }
     if(this.fuseLeft<=0 && !this._exploded && this.state!=='placed'){
       if(this.type==='brown'){
-        // 触らなければ無事に去る
         this._dead = true;
         spawnParticles(this.x, this.y, '#a07a4e', 8);
+        if(state.runStats) state.runStats.brownAvoided++;
       } else {
         this._exploded = true;
       }
@@ -681,14 +853,36 @@ function pickPortal(){
 }
 
 function pickType(){
-  // 茶（触ると即終了）：Lv2 から たまに、レベルで微増。最大4%。
-  // 画面同時1体まで。
+  // ボーナス中は黒/赤のみ（茶も気まぐれも無し）
+  if(state.bonus.active){
+    return Math.random() < 0.5 ? 'black' : 'red';
+  }
   const brownOnField = state.bombs.filter(b => b.type==='brown' && !b._dead).length;
   const brownChance = (state.level >= 2 && brownOnField < 1)
     ? Math.min(0.04, 0.012 + state.level * 0.003)
     : 0;
   if(Math.random() < brownChance) return 'brown';
   return Math.random() < 0.5 ? 'black' : 'red';
+}
+
+function startBonusStage(){
+  state.bonus.active = true;
+  state.bonus.timeLeft = 10000;
+  state.bonus.coinsThisStage = 0;
+  // 場の茶を一掃（プレイヤーをスタートで保護）
+  state.bombs.forEach(b=>{
+    if(!b._dead && b.type==='brown' && b.state!=='placed'){
+      b._dead = true;
+      spawnParticles(b.x, b.y, '#ffd24a', 8);
+    }
+  });
+  state.flash = 0.7; state.flashColor = '#ffd24a';
+  sfx.daily();
+}
+
+function endBonusStage(){
+  state.bonus.active = false;
+  sfx.combo(3);
 }
 
 function makeBomb(){
@@ -708,8 +902,8 @@ function makeBomb(){
     p = pickPortal();
   }
   const b = new Bomb(t, p.side, p.pos);
-  // 気まぐれダッシュ（黄色）：Lv3+ から低確率
-  if(t !== 'brown' && state.level >= 3 && Math.random() < Math.min(0.18, 0.06 + state.level*0.012)){
+  // 気まぐれダッシュ（黄色）：Lv3+ から低確率（ボーナス中はOFF）
+  if(!state.bonus.active && t !== 'brown' && state.level >= 3 && Math.random() < Math.min(0.18, 0.06 + state.level*0.012)){
     b.dashy = true;
     b.dashCooldown = 2200 + Math.random()*2500;
   }
@@ -765,24 +959,34 @@ function placeBomb(bomb, zoneKey){
     // コンボ
     state.combo++;
     state.comboTimer = 0;
+    if(state.combo > state.runStats.maxCombo) state.runStats.maxCombo = state.combo;
     const mul = comboMul(state.combo);
     const before = state.score;
     state.score = Math.min(9999, state.score + mul);
     state.scoreFloaters.push({x: bomb.x, y: bomb.y - 10, val: mul, mul: mul, life: 900, max: 900});
     spawnParticles(bomb.x, bomb.y, '#ffffaa', 8);
-    // 効果音：通常配置 or コンボティア上昇
+    // ボーナス中はコイン+5を直接付与（×2チケットも反映）
+    if(state.bonus.active){
+      const c = state.coinDoubleActive ? 10 : 5;
+      save.coins += c;
+      state.bonus.coinsThisStage += c;
+      state.scoreFloaters.push({x: bomb.x, y: bomb.y + 8, val: '+'+c+'C', mul: 5, life: 900, max: 900});
+    }
+    // 効果音
     const prevTierMul = comboMul(state.combo - 1);
     if(mul > prevTierMul){
       sfx.combo(mul);
     } else {
       sfx.place(state.combo);
     }
-    // 1点ごとに ごく ゆっくり早くなる
     state.spawnInterval = Math.max(480, state.spawnInterval * 0.988);
-    // レベル：8の倍数を跨いだら+1（コンボで複数跨ぐ場合に対応）
     if(Math.floor(state.score/8) > Math.floor(before/8)){
       state.level++;
       state.spawnInterval = Math.max(480, state.spawnInterval - 45);
+      // ボーナスステージ発動（10レベルごと）
+      if(state.level % 10 === 0 && !state.bonus.active){
+        startBonusStage();
+      }
     }
   }else{
     // 誤投入：そのゾーンの全ボム＋本体が連鎖爆発
@@ -809,6 +1013,7 @@ function pointInItem(x,y){
 function useItem(){
   if(state.itemCount <= 0) return;
   state.itemCount--;
+  state.runStats.itemsUsed++;
   sfx.item();
   // 場上の未仕分けばくだんを全部除去（placed以外）
   state.bombs.forEach(b=>{
@@ -1123,6 +1328,29 @@ function drawScoreFloaters(){
   ctx.globalAlpha = 1;
 }
 
+function drawBonus(){
+  if(!state.bonus.active) return;
+  const x = W/2, y = HUD_H + 46;
+  const ratio = Math.max(0, state.bonus.timeLeft / 10000);
+  ctx.save();
+  // 背景
+  ctx.fillStyle = 'rgba(0,0,0,.7)';
+  roundRect(x-90, y-14, 180, 32, 14, true, false);
+  ctx.strokeStyle = '#ffd24a';
+  ctx.lineWidth = 2;
+  roundRect(x-90, y-14, 180, 32, 14, false, true);
+  // テキスト
+  ctx.fillStyle = '#ffd24a';
+  ctx.font = 'bold 13px system-ui';
+  ctx.textAlign = 'center';
+  const c = state.coinDoubleActive ? 10 : 5;
+  ctx.fillText(`★ボーナス！ +${c}コイン／個 ★`, x, y);
+  // 残り時間バー
+  ctx.fillStyle = '#ff6644';
+  ctx.fillRect(x-80 + 160*(1-ratio)/2, y+7, 160*ratio, 4);
+  ctx.restore();
+}
+
 function drawCombo(){
   if(state.combo < 2) return;
   const mul = comboMul(state.combo);
@@ -1170,6 +1398,13 @@ function loop(t){
       p.life -= dt;
     });
     state.particles = state.particles.filter(p=>p.life>0);
+    // ボーナスステージのカウントダウン
+    if(state.bonus.active){
+      state.bonus.timeLeft -= dt;
+      if(state.bonus.timeLeft <= 0){
+        endBonusStage();
+      }
+    }
     // コンボのタイムアウト
     if(state.combo > 0){
       state.comboTimer += dt;
@@ -1202,6 +1437,7 @@ function loop(t){
   drawScoreFloaters();
   drawHud();
   drawCombo();
+  drawBonus();
   drawItem();
 
   if(state.flash>0){
@@ -1227,11 +1463,20 @@ function startGame(){
   state.spawnTimer = 0;
   state.running = true;
   state.gameOver = false;
-  // 持ち物からアイテムをセット
   state.itemCount = save.owned.zenmetsu || 0;
   state.combo = 0;
   state.comboTimer = 0;
   state.scoreFloaters = [];
+  state.runStats = {maxCombo:0, brownAvoided:0, itemsUsed:0};
+  state.bonus = {active:false, timeLeft:0, coinsThisStage:0};
+  // 2倍チケット消費
+  state.coinDoubleActive = false;
+  if(useTicketChk.checked && (save.owned.coinDouble||0) > 0){
+    save.owned.coinDouble--;
+    state.coinDoubleActive = true;
+    SAVE.save(save);
+  }
+  ensureDailyMissions();
   hideHome();
   gameoverEl.classList.add('hidden');
 }
@@ -1240,8 +1485,9 @@ function endGame(){
   if(state.gameOver) return;
   state.gameOver = true;
   state.running = false;
-  // 報酬：スコア = コイン
-  const earned = state.score;
+  // 報酬：基本コインはスコア = コイン、2倍チケット使用中なら×2
+  const baseEarned = state.score;
+  const earned = state.coinDoubleActive ? baseEarned * 2 : baseEarned;
   save.coins += earned;
   // 持ち物：使い切ったぶんを永続化
   save.owned.zenmetsu = state.itemCount;
@@ -1254,13 +1500,25 @@ function endGame(){
   // 履歴
   save.history.unshift({score: state.score, at: Date.now()});
   if(save.history.length > 10) save.history.length = 10;
+  // デイリーミッション評価＆報酬
+  const newlyDone = evaluateMissionsAfterRun();
   SAVE.save(save);
   // ゲームオーバー画面
   goScoreEl.textContent = state.score;
-  goCoinsEl.textContent = earned;
-  goBestEl.innerHTML = isNewBest
+  if(state.coinDoubleActive){
+    goCoinsEl.innerHTML = `${baseEarned} × 2 = <b>${earned}</b>`;
+  } else {
+    goCoinsEl.textContent = earned;
+  }
+  let bestHtml = isNewBest
     ? `<svg class="ic"><use href="#ic-party"/></svg> <svg class="ic"><use href="#ic-trophy"/></svg> ハイスコアこうしん！`
     : `<svg class="ic"><use href="#ic-trophy"/></svg> さいこう: ${save.best}`;
+  if(newlyDone.length > 0){
+    bestHtml += `<div style="margin-top:10px;color:#88dd88;font-size:13px;">`
+      + newlyDone.map(m=>`<svg class="ic"><use href="#ic-check"/></svg> ${m.desc} クリア！ ${rewardLabel(m.reward)}`).join('<br>')
+      + `</div>`;
+  }
+  goBestEl.innerHTML = bestHtml;
   gameoverEl.classList.remove('hidden');
 }
 
@@ -1340,9 +1598,19 @@ function buyZenmetsu(){
   refreshHome();
 }
 
+function buyTicket(){
+  if(save.coins < TICKET_PRICE) return;
+  save.coins -= TICKET_PRICE;
+  save.owned.coinDouble = (save.owned.coinDouble||0) + 1;
+  SAVE.save(save);
+  sfx.buy();
+  refreshHome();
+}
+
 startBtn.addEventListener('click', () => { sfx.tap(); startGame(); });
 goHomeBtn.addEventListener('click', () => { sfx.tap(); showHome(); });
-buyBtnEl.addEventListener('click', buyZenmetsu);
+buyZenBtnEl.addEventListener('click', buyZenmetsu);
+buyTcBtnEl.addEventListener('click', buyTicket);
 
 function fit(){
   const stage = document.getElementById('stage');
