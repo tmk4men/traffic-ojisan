@@ -398,6 +398,9 @@ const state = {
   runStats: {maxCombo:0, brownAvoided:0, itemsUsed:0},
   coinDoubleActive: false,
   bonus: {active:false, timeLeft:0, coinsThisStage:0},
+  // 紫ボムによるスロー
+  slowLeft: 0,
+  timeScale: 1,
 };
 
 const COMBO_TIMEOUT = 1400; // ms 連続正解の猶予
@@ -562,9 +565,11 @@ class Bomb{
     this.zone = null;            // 'red' | 'black' (placed時)
     // レベルで導火線が短くなる：Lv1で9.5秒 → 上限で5秒
     // 茶ばくだんは触らなければ安全。一定時間で去る。
-    this.fuseTime = (type==='brown')
-      ? 7000
-      : Math.max(5000, 9500 - (state.level-1) * 300);
+    // 金/紫ばくだんはタップで取らないと去る（爆発しない）
+    this.fuseTime = (type==='brown') ? 7000
+                  : (type==='gold')  ? 4500
+                  : (type==='purple')? 5500
+                  : Math.max(5000, 9500 - (state.level-1) * 300);
     this.fuseLeft = this.fuseTime;
     this.targetX = 0;
     this.targetY = 0;
@@ -721,6 +726,14 @@ class Bomb{
         this._dead = true;
         spawnParticles(this.x, this.y, '#a07a4e', 8);
         if(state.runStats) state.runStats.brownAvoided++;
+      } else if(this.type==='gold'){
+        // 取り逃した：チャリンと消える
+        this._dead = true;
+        spawnParticles(this.x, this.y, '#ffd24a', 10);
+      } else if(this.type==='purple'){
+        // 取り逃した：紫粒子で消える
+        this._dead = true;
+        spawnParticles(this.x, this.y, '#b07aff', 10);
       } else {
         this._exploded = true;
       }
@@ -751,12 +764,35 @@ class Bomb{
     let baseCol, hi;
     if(this.type==='black'){ baseCol='#1c1c22'; hi='#3a3a48'; }
     else if(this.type==='red'){ baseCol='#d24a64'; hi='#ff8aa3'; }
+    else if(this.type==='purple'){ baseCol='#7a3acc'; hi='#c89aff'; }
+    else if(this.type==='gold'){ baseCol='#e0a818'; hi='#ffeb70'; }
     else { baseCol='#7a5230'; hi='#a07a4e'; } // brown=危険
     ctx.fillStyle = blinkOn ? '#fff' : baseCol;
     ctx.beginPath(); ctx.arc(0,0,this.r,0,Math.PI*2); ctx.fill();
     ctx.fillStyle = blinkOn ? '#fff' : hi;
     ctx.beginPath(); ctx.arc(-7,-7,5,0,Math.PI*2); ctx.fill();
 
+    // 紫/金のキラキラオーラ（タップで取れる合図）
+    if(this.type==='purple' || this.type==='gold'){
+      const t = performance.now() * 0.005;
+      const auraColor = this.type==='purple' ? '#c89aff' : '#ffe070';
+      ctx.strokeStyle = auraColor;
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.55 + 0.25 * Math.sin(t*2);
+      ctx.beginPath(); ctx.arc(0,0,this.r+4,0,Math.PI*2); ctx.stroke();
+      ctx.globalAlpha = 1;
+      // チラチラ星（本体まわり）
+      ctx.fillStyle = auraColor;
+      for(let i=0;i<5;i++){
+        const a = t + i*Math.PI*2/5;
+        const rr = this.r + 8 + Math.sin(t*3+i)*1.5;
+        const sx = Math.cos(a)*rr;
+        const sy = Math.sin(a)*rr;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 1.8, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
     // 茶ばくだんの「触るな」マーク（赤いオーラ＋ヒット蓄積メーター）
     if(this.type==='brown'){
       const meter = Math.min(1, this.swipeAccum / 80);
@@ -915,7 +951,7 @@ function pickPortal(){
 }
 
 function pickType(){
-  // ボーナス中は黒/赤のみ（茶も気まぐれも無し）
+  // ボーナス中は黒/赤のみ（茶も気まぐれもレアもなし）
   if(state.bonus.active){
     return Math.random() < 0.5 ? 'black' : 'red';
   }
@@ -924,6 +960,12 @@ function pickType(){
     ? Math.min(0.04, 0.012 + state.level * 0.003)
     : 0;
   if(Math.random() < brownChance) return 'brown';
+  // 金ボム（Lv2+）：場に1個まで
+  const goldOnField = state.bombs.filter(b => b.type==='gold' && !b._dead).length;
+  if(state.level >= 2 && goldOnField < 1 && Math.random() < 0.025) return 'gold';
+  // 紫ボム（Lv4+）：場に1個まで
+  const purpleOnField = state.bombs.filter(b => b.type==='purple' && !b._dead).length;
+  if(state.level >= 4 && purpleOnField < 1 && Math.random() < 0.018) return 'purple';
   return Math.random() < 0.5 ? 'black' : 'red';
 }
 
@@ -966,7 +1008,7 @@ function makeBomb(){
   const b = new Bomb(t, p.side, p.pos);
   // 気まぐれダッシュ（黄色）：Lv3+ から発動。レベルが上がるほど確率↑（ボーナス中はOFF）
   // Lv3 → 12% / Lv10 → 26% / Lv20 → 46% / 上限 50%
-  if(!state.bonus.active && t !== 'brown' && state.level >= 3 && Math.random() < Math.min(0.50, 0.06 + state.level*0.020)){
+  if(!state.bonus.active && t !== 'brown' && t !== 'gold' && t !== 'purple' && state.level >= 3 && Math.random() < Math.min(0.50, 0.06 + state.level*0.020)){
     b.dashy = true;
     b.dashCooldown = 2200 + Math.random()*2500;
   }
@@ -1124,6 +1166,32 @@ function onDown(e){
     if(b.type==='brown') continue;   // 茶はつかめない（指を通すだけ）
     const dx = p.x-b.x, dy = p.y-b.y;
     if(dx*dx+dy*dy <= (b.r+10)*(b.r+10)){
+      // 金ボム：タップで一気にコイン
+      if(b.type==='gold'){
+        const reward = 30;
+        save.coins += reward;
+        SAVE.save(save);
+        coinsValEl.textContent = save.coins;
+        spawnParticles(b.x, b.y, '#ffd24a', 28);
+        spawnParticles(b.x, b.y, '#fff8c8', 12);
+        state.scoreFloaters.push({x:b.x, y:b.y-10, val: reward+'コイン', mul:5, life:1100, max:1100});
+        state.flash = 0.35; state.flashColor = '#ffd24a';
+        sfx.daily();
+        b._dead = true;
+        return;
+      }
+      // 紫ボム：タップで時間スロー
+      if(b.type==='purple'){
+        state.slowLeft = 3000;
+        state.timeScale = 0.4;
+        spawnParticles(b.x, b.y, '#c89aff', 32);
+        spawnParticles(b.x, b.y, '#fff', 10);
+        state.flash = 0.5; state.flashColor = '#aa88ff';
+        sfx.combo(2);
+        b._dead = true;
+        return;
+      }
+      // 通常ボム：ドラッグ開始
       state.dragging = b;
       state.dragOffset.x = b.x - p.x;
       state.dragOffset.y = b.y - p.y;
@@ -1429,6 +1497,37 @@ function drawScoreFloaters(){
   ctx.globalAlpha = 1;
 }
 
+function drawSlowOverlay(){
+  if(state.slowLeft <= 0) return;
+  const a = Math.min(1, state.slowLeft / 600); // 末尾0.6秒でフェード
+  ctx.save();
+  // 全体うっすら紫
+  ctx.fillStyle = 'rgba(150, 100, 220, '+ (0.18*a) +')';
+  ctx.fillRect(0,0,W,H);
+  // 左右の縦帯（よりスローっぽく）
+  const grad = ctx.createLinearGradient(0,0,W,0);
+  grad.addColorStop(0,    'rgba(180,120,255,'+ (0.55*a) +')');
+  grad.addColorStop(0.12, 'rgba(180,120,255,0)');
+  grad.addColorStop(0.88, 'rgba(180,120,255,0)');
+  grad.addColorStop(1,    'rgba(180,120,255,'+ (0.55*a) +')');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,W,H);
+  // SLOW テキスト（パルス）
+  const t = performance.now() * 0.006;
+  const sc = 1 + Math.sin(t)*0.04;
+  ctx.translate(W/2, HUD_H + 70);
+  ctx.scale(sc, sc);
+  ctx.globalAlpha = a;
+  ctx.font = 'bold 24px system-ui';
+  ctx.textAlign = 'center';
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = '#3a1a4a';
+  ctx.strokeText('S L O W', 0, 0);
+  ctx.fillStyle = '#e6caff';
+  ctx.fillText('S L O W', 0, 0);
+  ctx.restore();
+}
+
 function drawBonus(){
   if(!state.bonus.active) return;
   const x = W/2, y = HUD_H + 46;
@@ -1480,7 +1579,15 @@ function drawCombo(){
 // ========= ループ =========
 let last = 0;
 function loop(t){
-  const dt = Math.min(40, t - last); last = t;
+  const realDt = Math.min(40, t - last); last = t;
+  // スロー（紫ボム発動中）：ゲーム時間だけ遅らせる。UI/パーティクル/フロータは実時間
+  if(state.slowLeft > 0){
+    state.slowLeft -= realDt;
+    state.timeScale = state.slowLeft > 0 ? 0.4 : 1;
+  } else {
+    state.timeScale = 1;
+  }
+  const dt = realDt * state.timeScale;
 
   if(state.running){
     state.spawnTimer += dt;
@@ -1540,6 +1647,7 @@ function loop(t){
   drawCombo();
   drawBonus();
   drawItem();
+  drawSlowOverlay();
 
   if(state.flash>0){
     ctx.fillStyle = state.flashColor;
@@ -1570,6 +1678,8 @@ function startGame(){
   state.scoreFloaters = [];
   state.runStats = {maxCombo:0, brownAvoided:0, itemsUsed:0};
   state.bonus = {active:false, timeLeft:0, coinsThisStage:0};
+  state.slowLeft = 0;
+  state.timeScale = 1;
   // 2倍チケット消費
   state.coinDoubleActive = false;
   if(useTicketChk.checked && (save.owned.coinDouble||0) > 0){
