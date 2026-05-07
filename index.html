@@ -834,17 +834,17 @@ class Bomb{
   }
 }
 
-// 出現口（ポータル）：レベルが unlock 以上で開放
+// 出現口（ポータル）：レベルが unlock 以上で開放（2レベルにつき1口ずつゆるやかに）
 const PORTALS = [
   {side:'top',   pos:0.5, unlock:1},  // Lv1: 真ん中の上のみ
-  {side:'top',   pos:0.2, unlock:2},  // Lv2: + 左上
-  {side:'top',   pos:0.8, unlock:2},  //      + 右上
-  {side:'left',  pos:0.4, unlock:3},  // Lv3: + 左中
-  {side:'right', pos:0.4, unlock:3},  //      + 右中
-  {side:'left',  pos:0.75,unlock:4},  // Lv4: + 左下
-  {side:'right', pos:0.75,unlock:4},  //      + 右下
-  {side:'top',   pos:0.35,unlock:5},  // Lv5: + 上の隙間
-  {side:'top',   pos:0.65,unlock:5},
+  {side:'top',   pos:0.2, unlock:3},  // Lv3: + 左上
+  {side:'top',   pos:0.8, unlock:5},  // Lv5: + 右上
+  {side:'left',  pos:0.4, unlock:7},  // Lv7: + 左中
+  {side:'right', pos:0.4, unlock:9},  // Lv9: + 右中
+  {side:'left',  pos:0.75,unlock:11}, // Lv11:+ 左下
+  {side:'right', pos:0.75,unlock:13}, // Lv13:+ 右下
+  {side:'top',   pos:0.35,unlock:15}, // Lv15:+ 上の隙間（左）
+  {side:'top',   pos:0.65,unlock:17}, // Lv17:+ 上の隙間（右）
 ];
 
 function pickPortal(){
