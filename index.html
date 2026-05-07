@@ -93,6 +93,11 @@
   #gameover .gain{font-size:16px;margin:4px 0;color:#ffaa66;}
   #gameover button{margin-top:18px;padding:12px 28px;font-size:16px;border:none;border-radius:24px;
                    background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;}
+  #gameover .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  #gameover .actions button{margin-top:18px;}
+  #gameover .shareBtn{background:linear-gradient(180deg,#5cc5ff,#2a7ed8);color:#fff;}
+  #gameover .shareCard{margin-top:14px;max-width:280px;width:80%;border-radius:14px;
+                       box-shadow:0 6px 18px rgba(0,0,0,.5);display:none;}
 </style>
 </head>
 <body>
@@ -223,7 +228,11 @@
   <div class="big" id="goScore">0</div>
   <p class="gain">+ <b id="goCoins">0</b> コイン</p>
   <p class="small" id="goBest"></p>
-  <button id="goHome">ホームへ</button>
+  <img id="shareCard" class="shareCard" alt=""/>
+  <div class="actions">
+    <button id="goShare" class="shareBtn">シェア</button>
+    <button id="goHome">ホームへ</button>
+  </div>
 </div>
 <script>
 (() => {
@@ -235,6 +244,8 @@ const homeEl = document.getElementById('home');
 const gameoverEl = document.getElementById('gameover');
 const startBtn = document.getElementById('startBtn');
 const goHomeBtn = document.getElementById('goHome');
+const goShareBtn = document.getElementById('goShare');
+const shareCardEl = document.getElementById('shareCard');
 const bestValEl = document.getElementById('bestVal');
 const coinsValEl = document.getElementById('coinsVal');
 const buyZenBtnEl = homeEl.querySelector('.shopItem[data-item="zenmetsu"] .buyBtn');
@@ -953,8 +964,9 @@ function makeBomb(){
     p = pickPortal();
   }
   const b = new Bomb(t, p.side, p.pos);
-  // 気まぐれダッシュ（黄色）：Lv3+ から低確率（ボーナス中はOFF）
-  if(!state.bonus.active && t !== 'brown' && state.level >= 3 && Math.random() < Math.min(0.18, 0.06 + state.level*0.012)){
+  // 気まぐれダッシュ（黄色）：Lv3+ から発動。レベルが上がるほど確率↑（ボーナス中はOFF）
+  // Lv3 → 12% / Lv10 → 26% / Lv20 → 46% / 上限 50%
+  if(!state.bonus.active && t !== 'brown' && state.level >= 3 && Math.random() < Math.min(0.50, 0.06 + state.level*0.020)){
     b.dashy = true;
     b.dashCooldown = 2200 + Math.random()*2500;
   }
@@ -962,13 +974,14 @@ function makeBomb(){
 }
 
 function spawnBomb(){
-  // 未仕分けの「場上のばくだん」上限：レベルに応じて伸ばすが頭打ち
+  // 未仕分けの「場上のばくだん」上限：レベルが上がっても急に増やさない
+  // Lv1=6 / Lv5=10 / 以降10で頭打ち（個数で殺さず気まぐれ率で殺す）
   const active = state.bombs.filter(b => !b._dead && b.state !== 'placed').length;
-  const maxActive = Math.min(5 + state.level, 12); // Lv1=6, Lv7=12（以降頭打ち）
+  const maxActive = Math.min(5 + state.level, 10);
   if(active >= maxActive) return;
   state.bombs.push(makeBomb());
-  // 同時2体は混雑が空いてる時だけ
-  if(active + 1 < maxActive && state.level >= 5 && Math.random() < 0.25){
+  // 同時2体スポーンは中盤までの限定アクセント。後半は頻度を抑える
+  if(active + 1 < maxActive && state.level >= 5 && state.level < 18 && Math.random() < 0.15){
     state.bombs.push(makeBomb());
   }
 }
@@ -1607,8 +1620,149 @@ function endGame(){
       + `</div>`;
   }
   goBestEl.innerHTML = bestHtml;
+  // シェアカードを作って表示
+  state._lastShare = {
+    score: state.score,
+    level: state.level,
+    best: save.best,
+    isNewBest,
+    maxCombo: state.runStats.maxCombo|0,
+  };
+  const card = makeShareCanvas(state._lastShare);
+  shareCardEl.src = card.toDataURL('image/png');
+  shareCardEl.style.display = 'block';
+  state._lastShareCanvas = card;
   gameoverEl.classList.remove('hidden');
 }
+
+// ============= シェア機能 =============
+const SHARE_URL = 'https://tmk4men.github.io/bomb-sort/';
+function makeShareCanvas(data){
+  const SZ = 720;
+  const c = document.createElement('canvas');
+  c.width = SZ; c.height = SZ;
+  const x = c.getContext('2d');
+  // 背景：縦グラデ
+  const bg = x.createLinearGradient(0,0,0,SZ);
+  bg.addColorStop(0,'#1a1a26');
+  bg.addColorStop(1,'#3a2a48');
+  x.fillStyle = bg; x.fillRect(0,0,SZ,SZ);
+  // 装飾：散らばる星
+  for(let i=0;i<28;i++){
+    const sx = Math.random()*SZ, sy = Math.random()*SZ;
+    const r = 1 + Math.random()*2;
+    x.fillStyle = 'rgba(255,255,255,'+ (0.18 + Math.random()*0.4) +')';
+    x.beginPath(); x.arc(sx, sy, r, 0, Math.PI*2); x.fill();
+  }
+  // タイトル
+  x.fillStyle = '#ffd24a';
+  x.font = 'bold 44px system-ui';
+  x.textAlign = 'center';
+  x.fillText('ボム兵 仕訳', SZ/2, 84);
+  x.fillStyle = '#aaa';
+  x.font = '20px system-ui';
+  x.fillText('Bomb Sort', SZ/2, 112);
+  // SCORE ラベル
+  x.fillStyle = '#fff';
+  x.font = '24px system-ui';
+  x.fillText('SCORE', SZ/2, 180);
+  // 大スコア
+  x.fillStyle = data.isNewBest ? '#ff8aa3' : '#ffd24a';
+  x.font = 'bold 132px system-ui';
+  x.fillText(String(data.score), SZ/2, 308);
+  // ニューレコード
+  if(data.isNewBest){
+    x.fillStyle = '#ff66cc';
+    x.font = 'bold 26px system-ui';
+    x.fillText('★ ハイスコアこうしん ★', SZ/2, 350);
+  }
+  // ボム兵2匹（赤・黒）
+  drawShareBomb(x, SZ/2 - 110, 480, 'black');
+  drawShareBomb(x, SZ/2 + 110, 480, 'red');
+  // ステータスタグ
+  x.fillStyle = 'rgba(255,255,255,.10)';
+  roundRectPath(x, 60, 580, SZ-120, 60, 14); x.fill();
+  x.fillStyle = '#fff';
+  x.font = 'bold 22px system-ui';
+  x.textAlign = 'center';
+  x.fillText(`Lv.${data.level}    さいこう ${data.best}    最大コンボ ${data.maxCombo}`, SZ/2, 618);
+  // 下部 URL
+  x.fillStyle = '#88ddff';
+  x.font = '20px system-ui';
+  x.fillText(SHARE_URL, SZ/2, 678);
+  return c;
+}
+function drawShareBomb(x, cx, cy, type){
+  const r = 60;
+  // 影
+  x.fillStyle = 'rgba(0,0,0,.45)';
+  x.beginPath(); x.ellipse(cx+3, cy+r+8, r*0.95, 8, 0, 0, Math.PI*2); x.fill();
+  // 本体
+  let base, hi;
+  if(type==='black'){ base='#1c1c22'; hi='#3a3a48'; }
+  else { base='#d24a64'; hi='#ff8aa3'; }
+  x.fillStyle = base;
+  x.beginPath(); x.arc(cx, cy, r, 0, Math.PI*2); x.fill();
+  x.fillStyle = hi;
+  x.beginPath(); x.arc(cx-r*0.35, cy-r*0.35, r*0.28, 0, Math.PI*2); x.fill();
+  // ねじまき
+  x.fillStyle = '#caa84a';
+  x.beginPath(); x.arc(cx, cy-r-8, 8, 0, Math.PI*2); x.fill();
+  x.strokeStyle = '#caa84a'; x.lineWidth = 5;
+  x.beginPath();
+  x.moveTo(cx-12, cy-r-20); x.lineTo(cx+12, cy-r-8);
+  x.moveTo(cx+12, cy-r-20); x.lineTo(cx-12, cy-r-8);
+  x.stroke();
+  // 目
+  x.fillStyle = '#fff';
+  x.fillRect(cx-22, cy-8, 14, 18);
+  x.fillRect(cx+8,  cy-8, 14, 18);
+  x.fillStyle = '#000';
+  x.fillRect(cx-19, cy-2, 8, 11);
+  x.fillRect(cx+11, cy-2, 8, 11);
+  // 口
+  x.strokeStyle = '#000'; x.lineWidth = 5;
+  x.beginPath();
+  if(type==='red'){ x.arc(cx, cy+22, 12, 0.15*Math.PI, 0.85*Math.PI); }
+  else { x.moveTo(cx-9, cy+24); x.lineTo(cx+9, cy+24); }
+  x.stroke();
+}
+function roundRectPath(x, rx, ry, w, h, rad){
+  x.beginPath();
+  x.moveTo(rx+rad, ry);
+  x.lineTo(rx+w-rad, ry); x.quadraticCurveTo(rx+w, ry, rx+w, ry+rad);
+  x.lineTo(rx+w, ry+h-rad); x.quadraticCurveTo(rx+w, ry+h, rx+w-rad, ry+h);
+  x.lineTo(rx+rad, ry+h); x.quadraticCurveTo(rx, ry+h, rx, ry+h-rad);
+  x.lineTo(rx, ry+rad); x.quadraticCurveTo(rx, ry, rx+rad, ry);
+  x.closePath();
+}
+async function shareScore(){
+  const data = state._lastShare;
+  if(!data) return;
+  const can = state._lastShareCanvas || makeShareCanvas(data);
+  const text = data.isNewBest
+    ? `ボム兵仕訳でハイスコアこうしん！スコア ${data.score}（Lv.${data.level} / 最大コンボ ${data.maxCombo}）`
+    : `ボム兵仕訳でスコア ${data.score}！ Lv.${data.level} まで生き残った（最大コンボ ${data.maxCombo}）`;
+  // Blob 取得
+  const blob = await new Promise(res => can.toBlob(res, 'image/png'));
+  const file = blob ? new File([blob], 'bomb-sort.png', {type:'image/png'}) : null;
+  try{
+    if(file && navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], text, url: SHARE_URL, title: 'ボム兵仕訳'});
+      return;
+    }
+    if(navigator.share){
+      await navigator.share({text, url: SHARE_URL, title: 'ボム兵仕訳'});
+      return;
+    }
+  }catch(e){
+    if(e && e.name === 'AbortError') return;
+  }
+  // フォールバック: X 投稿（PC など）
+  const tw = `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(SHARE_URL)}`;
+  window.open(tw, '_blank', 'noopener');
+}
+goShareBtn.addEventListener('click', shareScore);
 
 // デイリーログイン
 function checkDailyBonus(){
