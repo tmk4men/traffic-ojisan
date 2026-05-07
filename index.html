@@ -836,15 +836,15 @@ class Bomb{
 
 // 出現口（ポータル）：レベルが unlock 以上で開放
 const PORTALS = [
-  {side:'top',   pos:0.5, unlock:1},  // Lv1: 真ん中の上
-  {side:'left',  pos:0.4, unlock:1},  //      + 左中（指の届く位置）
-  {side:'right', pos:0.4, unlock:1},  //      + 右中
+  {side:'top',   pos:0.5, unlock:1},  // Lv1: 真ん中の上のみ
   {side:'top',   pos:0.2, unlock:2},  // Lv2: + 左上
   {side:'top',   pos:0.8, unlock:2},  //      + 右上
-  {side:'left',  pos:0.75,unlock:3},  // Lv3: + 左下
-  {side:'right', pos:0.75,unlock:3},  //      + 右下
-  {side:'top',   pos:0.35,unlock:4},  // Lv4: + 上の隙間
-  {side:'top',   pos:0.65,unlock:4},
+  {side:'left',  pos:0.4, unlock:3},  // Lv3: + 左中
+  {side:'right', pos:0.4, unlock:3},  //      + 右中
+  {side:'left',  pos:0.75,unlock:4},  // Lv4: + 左下
+  {side:'right', pos:0.75,unlock:4},  //      + 右下
+  {side:'top',   pos:0.35,unlock:5},  // Lv5: + 上の隙間
+  {side:'top',   pos:0.65,unlock:5},
 ];
 
 function pickPortal(){
