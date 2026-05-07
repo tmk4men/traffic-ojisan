@@ -545,7 +545,7 @@ class Bomb{
       this.y = FLOOR.y + 16 + (FLOOR.h-32) * pos;
     } else { // top
       this.x = FLOOR.x + 16 + (FLOOR.w-32) * pos;
-      this.y = FLOOR.y + 18;  // 投入口の真下から出てくる
+      this.y = FLOOR.y + 86;  // 投入口の真下から出てくる
     }
     this.state = 'enter';        // enter | wander | drag | placed
     this.zone = null;            // 'red' | 'black' (placed時)
@@ -626,7 +626,7 @@ class Bomb{
         if(this.x < FLOOR.x + FLOOR.w - 24) arrived = true;
       } else { // top
         this.y += sp;
-        if(this.y > FLOOR.y + 24) arrived = true;
+        if(this.y > FLOOR.y + 140) arrived = true;
       }
       this.fuseLeft -= dt;
       if(arrived){
@@ -837,14 +837,14 @@ class Bomb{
 // 出現口（ポータル）：レベルが unlock 以上で開放
 const PORTALS = [
   {side:'top',   pos:0.5, unlock:1},  // Lv1: 真ん中の上
+  {side:'left',  pos:0.4, unlock:1},  //      + 左中（指の届く位置）
+  {side:'right', pos:0.4, unlock:1},  //      + 右中
   {side:'top',   pos:0.2, unlock:2},  // Lv2: + 左上
   {side:'top',   pos:0.8, unlock:2},  //      + 右上
-  {side:'left',  pos:0.4, unlock:3},  // Lv3: + 左中
-  {side:'right', pos:0.4, unlock:3},  //      + 右中
-  {side:'left',  pos:0.75,unlock:4},  // Lv4: + 左下
-  {side:'right', pos:0.75,unlock:4},  //      + 右下
-  {side:'top',   pos:0.35,unlock:5},  // Lv5: + 上の隙間
-  {side:'top',   pos:0.65,unlock:5},
+  {side:'left',  pos:0.75,unlock:3},  // Lv3: + 左下
+  {side:'right', pos:0.75,unlock:3},  //      + 右下
+  {side:'top',   pos:0.35,unlock:4},  // Lv4: + 上の隙間
+  {side:'top',   pos:0.65,unlock:4},
 ];
 
 function pickPortal(){
@@ -1239,28 +1239,65 @@ function drawHud(){
 }
 
 function drawChutes(){
-  // 解放済みの上ポータル位置に投入口を描画
+  // 解放済みのポータル位置に投入口を描画（上／左／右）
   ctx.save();
   PORTALS.forEach(p=>{
     if(p.unlock > state.level) return;
-    if(p.side !== 'top') return;
-    const cx = FLOOR.x + 16 + (FLOOR.w-32) * p.pos;
-    const cy = FLOOR.y + 10;   // 投入口を下げてフロアにめり込ませる
-    // 影（厚み）
-    ctx.fillStyle = 'rgba(0,0,0,.5)';
-    roundRect(cx-16, cy-4, 32, 14, 4, true, false);
-    // 本体（外枠）
-    ctx.fillStyle = '#3b3b48';
-    roundRect(cx-16, cy-7, 32, 11, 4, true, false);
-    ctx.strokeStyle = '#caa84a';
-    ctx.lineWidth = 2;
-    roundRect(cx-16, cy-7, 32, 11, 4, false, true);
-    // 暗いスリット
-    ctx.fillStyle = '#08080d';
-    roundRect(cx-12, cy-3, 24, 6, 2, true, false);
-    // ハイライト
-    ctx.fillStyle = 'rgba(255,255,255,.18)';
-    ctx.fillRect(cx-10, cy-6, 20, 1);
+    if(p.side === 'top'){
+      const cx = FLOOR.x + 16 + (FLOOR.w-32) * p.pos;
+      const cy = FLOOR.y + 78;   // 指の届く位置まで下げる
+      // 影（厚み）
+      ctx.fillStyle = 'rgba(0,0,0,.5)';
+      roundRect(cx-16, cy-4, 32, 14, 4, true, false);
+      // 本体（外枠）
+      ctx.fillStyle = '#3b3b48';
+      roundRect(cx-16, cy-7, 32, 11, 4, true, false);
+      ctx.strokeStyle = '#caa84a';
+      ctx.lineWidth = 2;
+      roundRect(cx-16, cy-7, 32, 11, 4, false, true);
+      // 暗いスリット
+      ctx.fillStyle = '#08080d';
+      roundRect(cx-12, cy-3, 24, 6, 2, true, false);
+      // ハイライト
+      ctx.fillStyle = 'rgba(255,255,255,.18)';
+      ctx.fillRect(cx-10, cy-6, 20, 1);
+    } else if(p.side === 'left'){
+      const cy = FLOOR.y + 16 + (FLOOR.h-32) * p.pos;
+      const cx = FLOOR.x;
+      // 影
+      ctx.fillStyle = 'rgba(0,0,0,.5)';
+      roundRect(cx-4, cy-16, 14, 32, 4, true, false);
+      // 本体
+      ctx.fillStyle = '#3b3b48';
+      roundRect(cx-7, cy-16, 11, 32, 4, true, false);
+      ctx.strokeStyle = '#caa84a';
+      ctx.lineWidth = 2;
+      roundRect(cx-7, cy-16, 11, 32, 4, false, true);
+      // 暗いスリット
+      ctx.fillStyle = '#08080d';
+      roundRect(cx-3, cy-12, 6, 24, 2, true, false);
+      // ハイライト
+      ctx.fillStyle = 'rgba(255,255,255,.18)';
+      ctx.fillRect(cx-6, cy-10, 1, 20);
+    } else if(p.side === 'right'){
+      const cy = FLOOR.y + 16 + (FLOOR.h-32) * p.pos;
+      const cx = FLOOR.x + FLOOR.w;
+      // 影
+      ctx.fillStyle = 'rgba(0,0,0,.5)';
+      roundRect(cx-10, cy-16, 14, 32, 4, true, false);
+      // 本体
+      ctx.fillStyle = '#3b3b48';
+      roundRect(cx-4, cy-16, 11, 32, 4, true, false);
+      ctx.strokeStyle = '#caa84a';
+      ctx.lineWidth = 2;
+      roundRect(cx-4, cy-16, 11, 32, 4, false, true);
+      // 暗いスリット
+      ctx.fillStyle = '#08080d';
+      roundRect(cx-3, cy-12, 6, 24, 2, true, false);
+      // ハイライト
+      ctx.fillStyle = 'rgba(255,255,255,.18)';
+      ctx.fillRect(cx+5, cy-10, 1, 20);
+    }
   });
   ctx.restore();
 }
