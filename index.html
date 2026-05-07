@@ -219,7 +219,7 @@
         <div class="icon"><svg class="ic ic-lg"><use href="#ic-x2"/></svg></div>
         <div class="info">
           <div class="name">スロウ</div>
-          <div class="desc">そのゲーム ぜんたいが ゆっくり（0.7ばいそく）になる</div>
+          <div class="desc">10びょうかん ぜんたいが ゆっくり（0.7ばいそく）になる</div>
           <div class="own">もちもの: <span class="ownCount">0</span> こ</div>
         </div>
       </div>
@@ -279,7 +279,7 @@
 
     <h3>アイテム</h3>
     <p>・ぜんめつ：ばのボムをいっせいに けす（ショップで買える）</p>
-    <p>・スロウ：そのゲーム ぜんたいが 0.7ばいそく になる</p>
+    <p>・スロウ：10びょうかん ぜんたいが 0.7ばいそく になる</p>
 
     <button class="closeBtn" id="howtoClose">とじる</button>
   </div>
@@ -1562,33 +1562,50 @@ function drawScoreFloaters(){
 }
 
 function drawSlowOverlay(){
-  if(state.slowLeft <= 0) return;
-  const a = Math.min(1, state.slowLeft / 600); // 末尾0.6秒でフェード
+  const burst  = state.slowLeft > 0;          // 紫ボムの強スロー
+  const ticket = state.coinDoubleActive;       // スロウ（10s）の弱スロー
+  if(!burst && !ticket) return;
   ctx.save();
-  // 全体うっすら紫
-  ctx.fillStyle = 'rgba(150, 100, 220, '+ (0.18*a) +')';
-  ctx.fillRect(0,0,W,H);
-  // 左右の縦帯（よりスローっぽく）
-  const grad = ctx.createLinearGradient(0,0,W,0);
-  grad.addColorStop(0,    'rgba(180,120,255,'+ (0.55*a) +')');
-  grad.addColorStop(0.12, 'rgba(180,120,255,0)');
-  grad.addColorStop(0.88, 'rgba(180,120,255,0)');
-  grad.addColorStop(1,    'rgba(180,120,255,'+ (0.55*a) +')');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0,0,W,H);
-  // SLOW テキスト（パルス）
-  const t = performance.now() * 0.006;
-  const sc = 1 + Math.sin(t)*0.04;
-  ctx.translate(W/2, HUD_H + 70);
-  ctx.scale(sc, sc);
-  ctx.globalAlpha = a;
-  ctx.font = 'bold 24px system-ui';
-  ctx.textAlign = 'center';
-  ctx.lineWidth = 5;
-  ctx.strokeStyle = '#3a1a4a';
-  ctx.strokeText('S L O W', 0, 0);
-  ctx.fillStyle = '#e6caff';
-  ctx.fillText('S L O W', 0, 0);
+  if(burst){
+    const a = Math.min(1, state.slowLeft / 600);
+    ctx.fillStyle = 'rgba(150, 100, 220, '+ (0.18*a) +')';
+    ctx.fillRect(0,0,W,H);
+    const grad = ctx.createLinearGradient(0,0,W,0);
+    grad.addColorStop(0,    'rgba(180,120,255,'+ (0.55*a) +')');
+    grad.addColorStop(0.12, 'rgba(180,120,255,0)');
+    grad.addColorStop(0.88, 'rgba(180,120,255,0)');
+    grad.addColorStop(1,    'rgba(180,120,255,'+ (0.55*a) +')');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,W,H);
+    const t = performance.now() * 0.006;
+    const sc = 1 + Math.sin(t)*0.04;
+    ctx.save();
+    ctx.translate(W/2, HUD_H + 70);
+    ctx.scale(sc, sc);
+    ctx.globalAlpha = a;
+    ctx.font = 'bold 24px system-ui';
+    ctx.textAlign = 'center';
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = '#3a1a4a';
+    ctx.strokeText('S L O W', 0, 0);
+    ctx.fillStyle = '#e6caff';
+    ctx.fillText('S L O W', 0, 0);
+    ctx.restore();
+  } else if(ticket){
+    const remain = state.slowTicketLeft / 1000;
+    const fade = Math.min(1, state.slowTicketLeft / 800);
+    ctx.fillStyle = 'rgba(150, 100, 220, '+ (0.06*fade) +')';
+    ctx.fillRect(0,0,W,H);
+    // 残り秒（右上、Lv の下）
+    ctx.font = 'bold 12px system-ui';
+    ctx.textAlign = 'right';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#3a1a4a';
+    const txt = `スロウ ${remain.toFixed(1)}s`;
+    ctx.strokeText(txt, W-10, 38);
+    ctx.fillStyle = '#c89aff';
+    ctx.fillText(txt, W-10, 38);
+  }
   ctx.restore();
 }
 
@@ -1643,9 +1660,16 @@ function drawCombo(){
 let last = 0;
 function loop(t){
   const realDt = Math.min(40, t - last); last = t;
-  // スロー：紫ボム > スロウチケット > 通常 の優先順
-  // 紫ボム=0.4倍（3秒）／スロウチケット=0.7倍（ゲーム中ずっと）
+  // スロー：紫ボム > スロウ > 通常 の優先順
+  // 紫ボム=0.4倍（3秒）／スロウ=0.7倍（10秒）
   if(state.slowLeft > 0) state.slowLeft -= realDt;
+  if(state.coinDoubleActive){
+    state.slowTicketLeft -= realDt;
+    if(state.slowTicketLeft <= 0){
+      state.coinDoubleActive = false;
+      state.slowTicketLeft = 0;
+    }
+  }
   if(state.slowLeft > 0){
     state.timeScale = 0.4;
   } else if(state.coinDoubleActive){
@@ -1782,11 +1806,13 @@ function startGame(){
   state.bonus = {active:false, timeLeft:0, coinsThisStage:0};
   state.slowLeft = 0;
   state.timeScale = 1;
-  // 2倍チケット消費
+  // スロウ消費（10秒間 0.7 倍速）
   state.coinDoubleActive = false;
+  state.slowTicketLeft = 0;
   if(useTicketChk.checked && (save.owned.coinDouble||0) > 0){
     save.owned.coinDouble--;
     state.coinDoubleActive = true;
+    state.slowTicketLeft = 10000;
     SAVE.save(save);
   }
   ensureDailyMissions();
