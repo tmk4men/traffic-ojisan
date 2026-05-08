@@ -454,6 +454,21 @@ const sfx = {
     this.beep(440, 0.14, 'square', 0.18);
     setTimeout(()=> this.beep(380, 0.11, 'square', 0.15), 90);
   },
+  // 追突事故：急ブレーキ→金属衝突→クラクション
+  crash(){
+    this.beep(220, 0.18, 'sawtooth', 0.28, -130);
+    this.noiseBurst(0.32, 0.50);
+    setTimeout(()=> {
+      this.beep(440, 0.20, 'square', 0.22);
+      this.beep(380, 0.20, 'square', 0.18);
+    }, 70);
+  },
+  // 逮捕（パトカーに触れた）：サイレン2音
+  arrest(){
+    this.beep(880, 0.22, 'square', 0.20);
+    setTimeout(()=> this.beep(660, 0.22, 'square', 0.20), 220);
+    setTimeout(()=> this.beep(880, 0.22, 'square', 0.20), 440);
+  },
 };
 
 // レイアウト
@@ -1180,14 +1195,25 @@ function spawnParticles(x,y,color,n=18){
 
 function explode(bomb){
   if(bomb._dead) return;
-  spawnParticles(bomb.x, bomb.y, bomb.type==='black' ? '#ffaa33' : '#ff5577', 28);
-  state.shake = 18;
+  if(bomb.type === 'brown'){
+    // パトカーに触れて逮捕：赤と青の点滅パーティクル
+    spawnParticles(bomb.x, bomb.y, '#ff3344', 14);
+    spawnParticles(bomb.x, bomb.y, '#3366ff', 14);
+    state.flashColor = '#3366ff';
+    sfx.arrest();
+  } else {
+    // 追突事故：ガラス片（白青）＋ボディ片（車体色）
+    spawnParticles(bomb.x, bomb.y, '#cce0f0', 16);
+    const bodyCol = bomb.type === 'red' ? '#d24a64' : '#1c1c22';
+    spawnParticles(bomb.x, bomb.y, bodyCol, 18);
+    state.flashColor = '#ff3344';
+    sfx.crash();
+  }
+  state.shake = 22;
   state.flash = 1;
-  state.flashColor = '#ffd24a';
   bomb._exploded = true;
   bomb._dead = true;
-  sfx.bomb();
-  setTimeout(endGame, 400);
+  setTimeout(endGame, 500);
 }
 
 function placeBomb(bomb, zoneKey){
