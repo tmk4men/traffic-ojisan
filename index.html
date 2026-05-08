@@ -1788,43 +1788,148 @@ function drawBg(){
 }
 
 function drawZones(){
-  // 背景画像が見えるよう、レーンの塗りは半透明
-  ctx.save();
-  ctx.globalAlpha = 0.78;
-  // あかレーン
-  ctx.fillStyle = RED.color;
-  roundRect(RED.x, RED.y, RED.w, RED.h, 10, true, false);
-  // くろレーン
-  ctx.fillStyle = BLK.color;
-  roundRect(BLK.x, BLK.y, BLK.w, BLK.h, 10, true, false);
-  ctx.restore();
-  // 縁取りは不透明（判定境界をくっきり）
-  ctx.strokeStyle = RED.edge; ctx.lineWidth = 3;
-  roundRect(RED.x, RED.y, RED.w, RED.h, 10, false, true);
-  ctx.strokeStyle = BLK.edge; ctx.lineWidth = 3;
-  roundRect(BLK.x, BLK.y, BLK.w, BLK.h, 10, false, true);
+  const t = performance.now();
+  const dragB = state.dragging;
+  const redOn  = dragB && dragB.type === 'red';
+  const blueOn = dragB && dragB.type === 'black';
+  drawSortZone(RED, '#7a1f30', '#b8324a', '#ff7a92', '#3a0d18', 'あか', '#ff5577', redOn,  t);
+  drawSortZone(BLK, '#1a2c5a', '#2a4078', '#9ab8ff', '#0a1430', 'あお', '#5577cc', blueOn, t);
+}
 
-  // 半透明アイコン
+function drawSortZone(zone, baseDark, baseLight, edgeBright, edgeShadow, label, accent, highlight, t){
+  const x = zone.x, y = zone.y, w = zone.w, h = zone.h;
   ctx.save();
-  ctx.globalAlpha = .25;
-  drawZoneIcon(RED.x+RED.w/2, RED.y+RED.h/2, '#ff5577');
-  drawZoneIcon(BLK.x+BLK.w/2, BLK.y+BLK.h/2, '#3a5db8');
+  // 1) 床塗り（縦グラデ）— 背景画像が透ける半透明
+  const grad = ctx.createLinearGradient(x, y, x, y+h);
+  grad.addColorStop(0,  baseDark);
+  grad.addColorStop(0.6, baseLight);
+  grad.addColorStop(1,  baseDark);
+  ctx.globalAlpha = 0.82;
+  ctx.fillStyle = grad;
+  roundRect(x, y, w, h, 6, true, false);
+  ctx.globalAlpha = 1;
+
+  // 2) 床のスキャン線（ドット感）
+  ctx.save();
+  ctx.beginPath(); roundRect(x+2, y+2, w-4, h-4, 4, false, false); ctx.clip();
+  ctx.globalAlpha = 0.10;
+  ctx.fillStyle = '#000';
+  for(let yy = y+3; yy < y+h-3; yy += 3){
+    ctx.fillRect(x+2, yy, w-4, 1);
+  }
   ctx.restore();
 
-  // ラベル
+  // 3) ハザード縞（下端 4px）
+  ctx.save();
+  ctx.beginPath(); roundRect(x, y, w, h, 6, false, false); ctx.clip();
+  const stripeH = 5;
+  const stripeW = 8;
+  for(let i=-stripeH; i<w+stripeH; i+=stripeW){
+    ctx.fillStyle = ((Math.floor(i/stripeW))%2===0) ? '#ffd24a' : '#1a1a26';
+    ctx.beginPath();
+    ctx.moveTo(x+i, y+h-stripeH);
+    ctx.lineTo(x+i+stripeW, y+h-stripeH);
+    ctx.lineTo(x+i+stripeW+stripeH, y+h);
+    ctx.lineTo(x+i+stripeH, y+h);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // 4) 中央の大きな下向き矢印（ドット絵風）
+  const cx = x + w/2;
+  const cy = y + h/2 + 2;
+  drawZoneArrow(cx, cy, accent, highlight, t);
+
+  // 5) 縁取り（外：濃い影 / 内：明るいハイライト）
+  ctx.strokeStyle = edgeShadow;
+  ctx.lineWidth = 3;
+  roundRect(x, y, w, h, 6, false, true);
+  ctx.strokeStyle = edgeBright;
+  ctx.lineWidth = 1.5;
+  roundRect(x+2, y+2, w-4, h-4, 4, false, true);
+
+  // 6) コーナーブラケット（強調）
+  const cb = 7;
+  ctx.fillStyle = edgeBright;
+  ctx.fillRect(x-1, y-1, cb, 2); ctx.fillRect(x-1, y-1, 2, cb);
+  ctx.fillRect(x+w-cb+1, y-1, cb, 2); ctx.fillRect(x+w-1, y-1, 2, cb);
+  ctx.fillRect(x-1, y+h-1, cb, 2); ctx.fillRect(x-1, y+h-cb+1, 2, cb);
+  ctx.fillRect(x+w-cb+1, y+h-1, cb, 2); ctx.fillRect(x+w-1, y+h-cb+1, 2, cb);
+
+  // 7) 上部の看板（ラベル）
+  const signW = 56, signH = 20;
+  const sx = Math.round(cx - signW/2);
+  const sy = Math.round(y - 9);
+  // 看板の影
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.fillRect(sx+2, sy+2, signW, signH);
+  // 看板本体（ピクセル枠）
+  ctx.fillStyle = '#1a1a26';
+  ctx.fillRect(sx, sy, signW, signH);
+  ctx.fillStyle = accent;
+  ctx.fillRect(sx+2, sy+2, signW-4, signH-4);
+  ctx.fillStyle = '#1a1a26';
+  ctx.fillRect(sx+4, sy+4, signW-8, signH-8);
+  // 留め具（左右の点）
+  ctx.fillStyle = edgeBright;
+  ctx.fillRect(sx-2, sy+signH/2-1, 2, 2);
+  ctx.fillRect(sx+signW, sy+signH/2-1, 2, 2);
+  // ラベル文字
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 14px "DotGothic16", monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('あか', RED.x+RED.w/2, RED.y+18);
-  ctx.fillText('あお', BLK.x+BLK.w/2, BLK.y+18);
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, cx, sy + signH/2 + 1);
+  ctx.textBaseline = 'alphabetic';
+
+  // 8) ハイライト（マッチドラッグ中はパルスする外周）
+  if(highlight){
+    const pulse = 0.5 + 0.5 * Math.sin(t * 0.012);
+    ctx.save();
+    ctx.globalAlpha = 0.35 + 0.45*pulse;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4;
+    roundRect(x-3, y-3, w+6, h+6, 8, false, true);
+    ctx.globalAlpha = 0.18 + 0.18*pulse;
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 8;
+    roundRect(x-1, y-1, w+2, h+2, 7, false, true);
+    ctx.restore();
+  }
+
+  ctx.restore();
 }
 
-function drawZoneIcon(cx,cy,col){
-  ctx.fillStyle = col;
-  ctx.beginPath(); ctx.arc(cx,cy,30,0,Math.PI*2); ctx.fill();
+function drawZoneArrow(cx, cy, color, highlight, t){
+  // ドット絵的な太い下向き矢印（半透明）
+  ctx.save();
+  ctx.translate(cx, cy);
+  // パルス時に少し大きく＋白くなる
+  const sc = highlight ? (1.0 + Math.sin(t*0.012)*0.10) : 1.0;
+  ctx.scale(sc, sc);
+  ctx.globalAlpha = highlight ? 0.55 : 0.30;
   ctx.fillStyle = '#fff';
-  ctx.fillRect(cx-10,cy-3,7,10);
-  ctx.fillRect(cx+3 ,cy-3,7,10);
+  // 縦バー
+  ctx.fillRect(-4, -14, 8, 14);
+  // 矢じり（三角）
+  ctx.beginPath();
+  ctx.moveTo(-12, 0);
+  ctx.lineTo(12, 0);
+  ctx.lineTo(0, 14);
+  ctx.closePath();
+  ctx.fill();
+  // ハイライト
+  ctx.globalAlpha = highlight ? 0.85 : 0.55;
+  ctx.fillStyle = color;
+  ctx.fillRect(-3, -13, 2, 12);
+  ctx.beginPath();
+  ctx.moveTo(-9, 1);
+  ctx.lineTo(9, 1);
+  ctx.lineTo(0, 11);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 }
 
 function roundRect(x,y,w,h,r,fill,stroke){
