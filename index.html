@@ -112,6 +112,9 @@
                          box-shadow:0 3px 0 #a06c10;}
   #home .shopItem button:active{transform:translateY(1px);box-shadow:0 2px 0 #a06c10;}
   #home .shopItem button:disabled{background:#444;color:#888;cursor:not-allowed;border-color:#222;box-shadow:none;}
+  #home .shopItem.locked{opacity:.65;border-color:rgba(120,120,140,.6);}
+  #home .shopItem.locked .icon{filter:grayscale(1) brightness(.6);}
+  #home .shopItem .lockNote{font-size:11px;color:#ff8888;margin-top:2px;}
   #home #startBtn{margin-top:12px;padding:14px 36px;font-size:20px;border:4px solid #993322;border-radius:0;
                   background:#ff6644;color:#fff;font-weight:bold;cursor:pointer;
                   box-shadow:0 6px 0 #993322;letter-spacing:0.1em;}
@@ -267,6 +270,38 @@
       <!-- 中心 -->
       <rect x="7" y="7" width="2" height="2" fill="#5a1a9a"/>
     </symbol>
+    <symbol id="ic-shield" viewBox="0 0 16 16" shape-rendering="crispEdges">
+      <!-- 紋章型シールド：黄色枠＋青地＋白十字 -->
+      <rect x="3" y="2" width="10" height="1" fill="#ffd24a"/>
+      <rect x="2" y="3" width="12" height="1" fill="#ffd24a"/>
+      <rect x="2" y="4" width="1" height="6" fill="#ffd24a"/>
+      <rect x="13" y="4" width="1" height="6" fill="#ffd24a"/>
+      <rect x="3" y="10" width="1" height="2" fill="#ffd24a"/>
+      <rect x="12" y="10" width="1" height="2" fill="#ffd24a"/>
+      <rect x="4" y="12" width="1" height="1" fill="#ffd24a"/>
+      <rect x="11" y="12" width="1" height="1" fill="#ffd24a"/>
+      <rect x="5" y="13" width="2" height="1" fill="#ffd24a"/>
+      <rect x="9" y="13" width="2" height="1" fill="#ffd24a"/>
+      <rect x="7" y="14" width="2" height="1" fill="#ffd24a"/>
+      <!-- 内側ブルー -->
+      <rect x="3" y="3" width="10" height="1" fill="#3a5db8"/>
+      <rect x="3" y="4" width="10" height="6" fill="#3a5db8"/>
+      <rect x="4" y="10" width="8" height="2" fill="#3a5db8"/>
+      <rect x="5" y="12" width="6" height="1" fill="#3a5db8"/>
+      <rect x="7" y="13" width="2" height="1" fill="#3a5db8"/>
+      <!-- 白十字 -->
+      <rect x="7" y="4" width="2" height="6" fill="#fff"/>
+      <rect x="5" y="6" width="6" height="2" fill="#fff"/>
+    </symbol>
+    <symbol id="ic-lock" viewBox="0 0 16 16" shape-rendering="crispEdges">
+      <rect x="5" y="3" width="6" height="1" fill="#888"/>
+      <rect x="4" y="4" width="1" height="3" fill="#888"/>
+      <rect x="11" y="4" width="1" height="3" fill="#888"/>
+      <rect x="3" y="7" width="10" height="6" fill="#bbb"/>
+      <rect x="3" y="13" width="10" height="1" fill="#888"/>
+      <rect x="7" y="9" width="2" height="2" fill="#444"/>
+      <rect x="7" y="11" width="2" height="1" fill="#444"/>
+    </symbol>
     <symbol id="ic-target" viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="10" fill="none" stroke="#88ddff" stroke-width="2"/>
       <circle cx="12" cy="12" r="6" fill="none" stroke="#88ddff" stroke-width="1.5"/>
@@ -318,6 +353,14 @@
         <span class="small">（もちもの <span id="ticketCount">0</span> こ）</span>
       </label>
     </div>
+    <div class="useTicket hidden" id="useShieldBox" style="background:rgba(255,210,74,.14);border-color:#ffd24a;">
+      <label>
+        <input type="checkbox" id="useShieldChk">
+        <svg class="ic"><use href="#ic-shield"/></svg>
+        シールドを つかう
+        <span class="small">（もちもの <span id="shieldCount">0</span> こ）</span>
+      </label>
+    </div>
     <button id="startBtn">スタート</button>
     <p class="small" style="margin-top:8px;opacity:.6;">ドラッグで しわけ／まちがえると 追突／パトカーは さわるな！</p>
     <div class="missions">
@@ -353,6 +396,18 @@
           </div>
         </div>
         <button class="buyBtn">100円 で 1こ かう</button>
+      </div>
+      <div class="shopItem" data-item="shield">
+        <div class="row">
+          <div class="icon"><svg class="ic ic-lg"><use href="#ic-shield"/></svg></div>
+          <div class="info">
+            <div class="name">シールド</div>
+            <div class="desc">1ゲームちゅう さいしょの ついとつを 1かい ふせぐ</div>
+            <div class="own">もちもの: <span class="ownCount">0</span> こ</div>
+            <div class="lockNote hidden">🔒 ベスト 350てん こえると 解禁</div>
+          </div>
+        </div>
+        <button class="buyBtn">200円 で 1こ かう</button>
       </div>
     </div>
   </div>
@@ -392,6 +447,7 @@
     <h3>どうぐ</h3>
     <p>・クラクション：場の車を いっせいに 通過させる（ショップで買える）</p>
     <p>・スロウ：10びょうかん ぜんたいが 0.7ばいそく になる</p>
+    <p>・シールド：1ゲームちゅう さいしょの ついとつを 1かい ふせぐ（ベスト350こえると 解禁）</p>
 
     <h3>クレジット</h3>
     <p class="small">BGM: <a href="https://otologic.jp/" target="_blank" rel="noopener" style="color:#88ddff;text-decoration:underline;">OtoLogic</a> 様（GB-General-C02）</p>
@@ -429,6 +485,8 @@ const bestValEl = document.getElementById('bestVal');
 const coinsValEl = document.getElementById('coinsVal');
 const buyZenBtnEl = homeEl.querySelector('.shopItem[data-item="zenmetsu"] .buyBtn');
 const buyTcBtnEl = homeEl.querySelector('.shopItem[data-item="coindouble"] .buyBtn');
+const buyShieldBtnEl = homeEl.querySelector('.shopItem[data-item="shield"] .buyBtn');
+const useShieldChk = document.getElementById('useShieldChk');
 const useTicketChk = document.getElementById('useTicketChk');
 const historyListEl = document.getElementById('historyList');
 const goScoreEl = document.getElementById('goScore');
@@ -439,6 +497,8 @@ const W = cv.width, H = cv.height;
 // 永続データ
 const ZEN_PRICE = 50;
 const TICKET_PRICE = 100;
+const SHIELD_PRICE = 200;
+const SHIELD_UNLOCK_BEST = 350;  // ベスト350てん超えで解禁
 // 旧キー(bomb_*)から新キー(traffic_*)へ一度だけ移行
 (function migrateOldSave(){
   if(localStorage.getItem('traffic_best') !== null) return;
@@ -452,6 +512,7 @@ const SAVE = {
   load(){
     const owned = JSON.parse(localStorage.getItem('traffic_owned') || '{"zenmetsu":1}');
     if(typeof owned.coinDouble !== 'number') owned.coinDouble = 0;
+    if(typeof owned.shield !== 'number') owned.shield = 0;
     return {
       best: +localStorage.getItem('traffic_best') || 0,
       coins: +localStorage.getItem('traffic_coins') || 0,
@@ -617,6 +678,8 @@ const state = {
   scoreFloaters: [],
   runStats: {maxCombo:0, brownAvoided:0, itemsUsed:0},
   coinDoubleActive: false,
+  shieldActive: false,         // シールドを装備してこのゲームを開始したか
+  shieldUsedThisRun: false,    // 既に1回シールドで助かったか
   bonus: {active:false, timeLeft:0, coinsThisStage:0},
   // 紫ボムによるスロー
   slowLeft: 0,
@@ -742,6 +805,31 @@ function refreshHome(){
   } else {
     useBox.classList.add('hidden');
     document.getElementById('useTicketChk').checked = false;
+  }
+  // シールド（ベスト350こえると解禁）
+  const shieldUnlocked = save.best >= SHIELD_UNLOCK_BEST;
+  const shItem = homeEl.querySelector('.shopItem[data-item="shield"]');
+  shItem.querySelector('.ownCount').textContent = (save.owned.shield||0);
+  shItem.classList.toggle('locked', !shieldUnlocked);
+  shItem.querySelector('.lockNote').classList.toggle('hidden', shieldUnlocked);
+  const shBtn = shItem.querySelector('.buyBtn');
+  if(!shieldUnlocked){
+    shBtn.disabled = true;
+    shBtn.innerHTML = `🔒 ベスト ${SHIELD_UNLOCK_BEST} こえると 解禁`;
+  } else {
+    shBtn.disabled = save.coins < SHIELD_PRICE;
+    shBtn.innerHTML = (save.coins < SHIELD_PRICE)
+      ? `コインが ${SHIELD_PRICE - save.coins} こ たりない`
+      : `${SHIELD_PRICE} <svg class="ic"><use href="#ic-coin"/></svg> で 1こ かう`;
+  }
+  // シールド使用トグル
+  const useShBox = document.getElementById('useShieldBox');
+  document.getElementById('shieldCount').textContent = (save.owned.shield||0);
+  if(save.owned.shield > 0){
+    useShBox.classList.remove('hidden');
+  } else {
+    useShBox.classList.add('hidden');
+    useShieldChk.checked = false;
   }
   // ミッション
   renderMissions();
@@ -1471,7 +1559,11 @@ function explode(bomb){
   state.flash = 1;
   bomb._exploded = true;
   bomb._dead = true;
-  setTimeout(endGame, 700);
+  // 連鎖爆発でも endGame は1回だけ予約
+  if(!state._endGameScheduled){
+    state._endGameScheduled = true;
+    setTimeout(endGame, 700);
+  }
 }
 
 function placeBomb(bomb, zoneKey){
@@ -1799,6 +1891,38 @@ function drawHud(){
   ctx.fillStyle = '#fff';
   ctx.textAlign = 'right';
   ctx.fillText(`Lv.${state.level}`, W-10, 22);
+  // シールド装備中インジケータ（左上、SCOREの下）
+  if(state.shieldActive && !state.shieldUsedThisRun){
+    drawShieldBadge(12, HUD_H + 10);
+  }
+}
+
+function drawShieldBadge(x, y){
+  ctx.save();
+  // 黄色枠
+  ctx.fillStyle = '#ffd24a';
+  ctx.fillRect(x+2, y, 12, 1);
+  ctx.fillRect(x+1, y+1, 14, 1);
+  ctx.fillRect(x, y+2, 1, 8);
+  ctx.fillRect(x+15, y+2, 1, 8);
+  ctx.fillRect(x+1, y+10, 1, 2);
+  ctx.fillRect(x+14, y+10, 1, 2);
+  ctx.fillRect(x+2, y+12, 1, 1);
+  ctx.fillRect(x+13, y+12, 1, 1);
+  ctx.fillRect(x+3, y+13, 2, 1);
+  ctx.fillRect(x+11, y+13, 2, 1);
+  ctx.fillRect(x+5, y+14, 6, 1);
+  // 内側ブルー
+  ctx.fillStyle = '#3a5db8';
+  ctx.fillRect(x+2, y+2, 12, 8);
+  ctx.fillRect(x+3, y+10, 10, 2);
+  ctx.fillRect(x+5, y+12, 6, 1);
+  ctx.fillRect(x+5, y+13, 6, 1);
+  // 白十字
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(x+7, y+3, 2, 7);
+  ctx.fillRect(x+5, y+5, 6, 2);
+  ctx.restore();
 }
 
 function drawChutes(){
@@ -2194,6 +2318,7 @@ function startGame(){
   state.spawnTimer = 0;
   state.running = true;
   state.gameOver = false;
+  state._endGameScheduled = false;
   state.itemCount = save.owned.zenmetsu || 0;
   state.combo = 0;
   state.comboTimer = 0;
@@ -2211,6 +2336,14 @@ function startGame(){
     state.slowTicketLeft = 10000;
     SAVE.save(save);
   }
+  // シールド消費（最初の追突1回をふせぐ）
+  state.shieldActive = false;
+  state.shieldUsedThisRun = false;
+  if(useShieldChk.checked && (save.owned.shield||0) > 0){
+    save.owned.shield--;
+    state.shieldActive = true;
+    SAVE.save(save);
+  }
   ensureDailyMissions();
   hideHome();
   gameoverEl.classList.add('hidden');
@@ -2218,7 +2351,23 @@ function startGame(){
 }
 
 function endGame(){
+  state._endGameScheduled = false;
   if(state.gameOver) return;
+  // シールド発動：1回だけゲームオーバーをふせぐ
+  if(state.shieldActive && !state.shieldUsedThisRun){
+    state.shieldActive = false;
+    state.shieldUsedThisRun = true;
+    state.flash = 1;
+    state.flashColor = '#ffd24a';
+    state.shake = 18;
+    // 場の爆発した車を片付けて続行
+    state.bombs.forEach(b => { if(b._exploded) b._dead = true; });
+    state.angryFaces = [];
+    state.combo = 0;
+    state.scoreFloaters.push({x: W/2, y: H/2 - 20, val: 'シールド発動！', mul: 5, life: 1500, max: 1500});
+    sfx.daily();
+    return;
+  }
   state.gameOver = true;
   state.running = false;
   bgmPause();
@@ -2465,6 +2614,16 @@ function buyTicket(){
   refreshHome();
 }
 
+function buyShield(){
+  if(save.best < SHIELD_UNLOCK_BEST) return;
+  if(save.coins < SHIELD_PRICE) return;
+  save.coins -= SHIELD_PRICE;
+  save.owned.shield = (save.owned.shield||0) + 1;
+  SAVE.save(save);
+  sfx.buy();
+  refreshHome();
+}
+
 startBtn.addEventListener('click', () => { sfx.tap(); startGame(); });
 
 // ハンバーガーメニュー＆あそびかた
@@ -2510,6 +2669,7 @@ startBtn.addEventListener('click', () => { sfx.tap(); startGame(); });
 goHomeBtn.addEventListener('click', () => { sfx.tap(); showHome(); });
 buyZenBtnEl.addEventListener('click', buyZenmetsu);
 buyTcBtnEl.addEventListener('click', buyTicket);
+buyShieldBtnEl.addEventListener('click', buyShield);
 
 function fit(){
   const stage = document.getElementById('stage');
