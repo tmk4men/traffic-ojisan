@@ -383,6 +383,9 @@
     <p>・クラクション：場の車を いっせいに 通過させる（ショップで買える）</p>
     <p>・スロウ：10びょうかん ぜんたいが 0.7ばいそく になる</p>
 
+    <h3>クレジット</h3>
+    <p class="small">BGM: <a href="https://otologic.jp/" target="_blank" rel="noopener" style="color:#88ddff;text-decoration:underline;">OtoLogic</a> 様（GB-General-C02）</p>
+
     <button class="closeBtn" id="howtoClose">とじる</button>
   </div>
 </div>
@@ -559,6 +562,13 @@ const sfx = {
     setTimeout(()=> this.beep(880, 0.22, 'square', 0.20), 440);
   },
 };
+
+// BGM（OtoLogic GB-General-C02、ループ再生）
+const bgm = new Audio('bgm-stage.mp3');
+bgm.loop = true;
+bgm.volume = 0.35;
+function bgmPlay(){ bgm.play().catch(()=>{}); }
+function bgmPause(){ bgm.pause(); }
 
 // レイアウト
 const HUD_H = 36;
@@ -2195,12 +2205,14 @@ function startGame(){
   ensureDailyMissions();
   hideHome();
   gameoverEl.classList.add('hidden');
+  bgmPlay();
 }
 
 function endGame(){
   if(state.gameOver) return;
   state.gameOver = true;
   state.running = false;
+  bgmPause();
   // 報酬：基本コインはスコア = コイン、罰金があれば差し引き
   const baseEarned = state.score;
   const fine = state.runStats.fineApplied || 0;
