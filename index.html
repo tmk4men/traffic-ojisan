@@ -1430,7 +1430,8 @@ function explode(bomb){
     type: bomb.type === 'brown' ? 'cop' : 'driver',
   });
   if(bomb.type === 'brown'){
-    // パトカーに触れて逮捕：赤と青の点滅パーティクル（控えめ）
+    // パトカーに触れて逮捕：罰金 -100円
+    state.runStats.fineApplied = 100;
     spawnParticles(bomb.x, bomb.y, '#ff3344', 8);
     spawnParticles(bomb.x, bomb.y, '#3366ff', 8);
     state.flashColor = '#3366ff';
@@ -2178,7 +2179,7 @@ function startGame(){
   state.combo = 0;
   state.comboTimer = 0;
   state.scoreFloaters = [];
-  state.runStats = {maxCombo:0, brownAvoided:0, itemsUsed:0};
+  state.runStats = {maxCombo:0, brownAvoided:0, itemsUsed:0, fineApplied:0};
   state.bonus = {active:false, timeLeft:0, coinsThisStage:0};
   state.slowLeft = 0;
   state.timeScale = 1;
@@ -2200,10 +2201,11 @@ function endGame(){
   if(state.gameOver) return;
   state.gameOver = true;
   state.running = false;
-  // 報酬：基本コインはスコア = コイン
+  // 報酬：基本コインはスコア = コイン、罰金があれば差し引き
   const baseEarned = state.score;
-  const earned = baseEarned;
-  save.coins += earned;
+  const fine = state.runStats.fineApplied || 0;
+  const earned = baseEarned - fine;
+  save.coins = Math.max(0, save.coins + earned);
   // 持ち物：使い切ったぶんを永続化
   save.owned.zenmetsu = state.itemCount;
   // ベスト
@@ -2224,6 +2226,10 @@ function endGame(){
   let bestHtml = isNewBest
     ? `<svg class="ic"><use href="#ic-party"/></svg> <svg class="ic"><use href="#ic-trophy"/></svg> ハイスコアこうしん！`
     : `<svg class="ic"><use href="#ic-trophy"/></svg> さいこう: ${save.best}`;
+  if(fine > 0){
+    bestHtml += `<div style="margin-top:8px;color:#ff5577;font-size:13px;">
+      パトカー違反で罰金 -${fine}円</div>`;
+  }
   if(newlyDone.length > 0){
     bestHtml += `<div style="margin-top:10px;color:#88dd88;font-size:13px;">`
       + newlyDone.map(m=>`<svg class="ic"><use href="#ic-check"/></svg> ${m.desc} クリア！ ${rewardLabel(m.reward)}`).join('<br>')
