@@ -707,6 +707,12 @@ function bakeCarSprite(type){
   CAR_SPRITES[t] = bakeCarSprite(t);
 });
 
+// 背景画像（ロード完了まではフォールバック塗り）
+const bgImg = new Image();
+let bgImgReady = false;
+bgImg.onload = () => { bgImgReady = true; };
+bgImg.src = 'bg.png';
+
 // ========= 車 =========
 class Bomb{
   constructor(type, side='top', pos=0.5){
@@ -1388,24 +1394,28 @@ window.addEventListener('touchcancel', onUp, {passive:false});
 
 // ========= 描画 =========
 function drawBg(){
-  ctx.fillStyle = '#2a2a36';
-  ctx.fillRect(0,0,W,H);
-  // フロアタイル
-  ctx.strokeStyle = 'rgba(255,255,255,.04)';
-  ctx.lineWidth = 1;
-  for(let x=0;x<W;x+=24){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-  for(let y=0;y<H;y+=24){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  if(bgImgReady){
+    ctx.drawImage(bgImg, 0, 0, W, H);
+  } else {
+    ctx.fillStyle = '#2a2a36';
+    ctx.fillRect(0,0,W,H);
+  }
 }
 
 function drawZones(){
-  // あかカーペット
+  // 背景画像が見えるよう、レーンの塗りは半透明
+  ctx.save();
+  ctx.globalAlpha = 0.78;
+  // あかレーン
   ctx.fillStyle = RED.color;
   roundRect(RED.x, RED.y, RED.w, RED.h, 10, true, false);
-  ctx.strokeStyle = RED.edge; ctx.lineWidth = 3;
-  roundRect(RED.x, RED.y, RED.w, RED.h, 10, false, true);
-  // くろカーペット
+  // くろレーン
   ctx.fillStyle = BLK.color;
   roundRect(BLK.x, BLK.y, BLK.w, BLK.h, 10, true, false);
+  ctx.restore();
+  // 縁取りは不透明（判定境界をくっきり）
+  ctx.strokeStyle = RED.edge; ctx.lineWidth = 3;
+  roundRect(RED.x, RED.y, RED.w, RED.h, 10, false, true);
   ctx.strokeStyle = BLK.edge; ctx.lineWidth = 3;
   roundRect(BLK.x, BLK.y, BLK.w, BLK.h, 10, false, true);
 
