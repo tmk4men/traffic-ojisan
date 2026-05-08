@@ -74,6 +74,16 @@
   #home .stats{display:flex;gap:14px;margin:6px 0 10px;font-size:14px;}
   #home .stats .pill{background:rgba(0,0,0,.45);border:2px solid rgba(255,210,74,.5);
                      border-radius:0;padding:6px 12px;}
+  /* タブナビ */
+  #home .tabs{display:flex;gap:0;width:100%;max-width:320px;margin:6px 0 12px;}
+  #home .tabs .tab{flex:1;padding:10px;border:3px solid #ffd24a;border-radius:0;
+                    background:rgba(0,0,0,.45);color:#aaa;font-weight:bold;font-size:14px;
+                    cursor:pointer;font-family:inherit;letter-spacing:0.05em;}
+  #home .tabs .tab.active{background:#ffd24a;color:#222;border-bottom-color:transparent;
+                           box-shadow:inset 0 -3px 0 #ffd24a;}
+  #home .tabs .tab:not(:first-child){border-left:none;}
+  #home .tabContent{width:100%;display:flex;flex-direction:column;align-items:center;}
+  #home .tabContent.hidden{display:none;}
   #home .stats b{color:#ffcc33;margin-left:4px;}
   #home .shop{width:100%;max-width:320px;margin:8px 0;}
   #home .shop h3{margin:8px 0;font-size:14px;text-align:center;opacity:.7;letter-spacing:.2em;}
@@ -283,48 +293,58 @@
     <div class="pill"><svg class="ic"><use href="#ic-trophy"/></svg> さいこう <b id="bestVal">0</b></div>
     <div class="pill"><svg class="ic"><use href="#ic-coin"/></svg> ちょきん <b id="coinsVal">0</b>円</div>
   </div>
-  <div class="shop">
-    <h3>ショップ</h3>
-    <div class="shopItem" data-item="zenmetsu">
-      <div class="row">
-        <div class="icon"><svg class="ic ic-lg"><use href="#ic-burst"/></svg></div>
-        <div class="info">
-          <div class="name">クラクション</div>
-          <div class="desc">場の車を いっせいに 通過させる</div>
-          <div class="own">もちもの: <span class="ownCount">0</span> こ</div>
-        </div>
-      </div>
-      <button class="buyBtn">50円 で 1こ かう</button>
+  <!-- タブナビ -->
+  <div class="tabs">
+    <button class="tab active" data-tab="main">ホーム</button>
+    <button class="tab" data-tab="shop">ショップ</button>
+  </div>
+  <!-- ホームタブ -->
+  <div class="tabContent" data-tab="main">
+    <div class="useTicket hidden" id="useTicketBox">
+      <label>
+        <input type="checkbox" id="useTicketChk">
+        <svg class="ic"><use href="#ic-x2"/></svg>
+        スロウを つかう
+        <span class="small">（もちもの <span id="ticketCount">0</span> こ）</span>
+      </label>
     </div>
-    <div class="shopItem" data-item="coindouble">
-      <div class="row">
-        <div class="icon"><svg class="ic ic-lg"><use href="#ic-x2"/></svg></div>
-        <div class="info">
-          <div class="name">スロウ</div>
-          <div class="desc">10びょうかん ぜんたいが ゆっくり（0.7ばいそく）になる</div>
-          <div class="own">もちもの: <span class="ownCount">0</span> こ</div>
-        </div>
-      </div>
-      <button class="buyBtn">100円 で 1こ かう</button>
+    <button id="startBtn">スタート</button>
+    <p class="small" style="margin-top:8px;opacity:.6;">ドラッグで しわけ／まちがえると 追突／パトカーは さわるな！</p>
+    <div class="missions">
+      <h3>きょうのチャレンジ</h3>
+      <ul id="missionList"></ul>
+    </div>
+    <div class="history">
+      <h3>さいきんのスコア</h3>
+      <ol id="historyList"><li class="empty">まだ プレイ なし</li></ol>
     </div>
   </div>
-  <div class="useTicket hidden" id="useTicketBox">
-    <label>
-      <input type="checkbox" id="useTicketChk">
-      <svg class="ic"><use href="#ic-x2"/></svg>
-      スロウを つかう
-      <span class="small">（もちもの <span id="ticketCount">0</span> こ）</span>
-    </label>
-  </div>
-  <button id="startBtn">スタート</button>
-  <p class="small" style="margin-top:8px;opacity:.6;">ドラッグで しわけ／まちがえると 追突／パトカーは さわるな！</p>
-  <div class="missions">
-    <h3>きょうのチャレンジ</h3>
-    <ul id="missionList"></ul>
-  </div>
-  <div class="history">
-    <h3>さいきんのスコア</h3>
-    <ol id="historyList"><li class="empty">まだ プレイ なし</li></ol>
+  <!-- ショップタブ -->
+  <div class="tabContent hidden" data-tab="shop">
+    <div class="shop">
+      <div class="shopItem" data-item="zenmetsu">
+        <div class="row">
+          <div class="icon"><svg class="ic ic-lg"><use href="#ic-burst"/></svg></div>
+          <div class="info">
+            <div class="name">クラクション</div>
+            <div class="desc">場の車を いっせいに 通過させる</div>
+            <div class="own">もちもの: <span class="ownCount">0</span> こ</div>
+          </div>
+        </div>
+        <button class="buyBtn">50円 で 1こ かう</button>
+      </div>
+      <div class="shopItem" data-item="coindouble">
+        <div class="row">
+          <div class="icon"><svg class="ic ic-lg"><use href="#ic-x2"/></svg></div>
+          <div class="info">
+            <div class="name">スロウ</div>
+            <div class="desc">10びょうかん ぜんたいが ゆっくり（0.7ばいそく）になる</div>
+            <div class="own">もちもの: <span class="ownCount">0</span> こ</div>
+          </div>
+        </div>
+        <button class="buyBtn">100円 で 1こ かう</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2444,6 +2464,20 @@ startBtn.addEventListener('click', () => { sfx.tap(); startGame(); });
   });
   howtoEl.addEventListener('click', (e)=>{
     if(e.target === howtoEl) howtoEl.classList.add('hidden');
+  });
+})();
+
+// ホーム画面のタブ切替（ホーム / ショップ）
+(()=>{
+  const tabs = document.querySelectorAll('#home .tab');
+  const contents = document.querySelectorAll('#home .tabContent');
+  tabs.forEach(btn => {
+    btn.addEventListener('click', ()=>{
+      sfx.tap();
+      const target = btn.dataset.tab;
+      tabs.forEach(b => b.classList.toggle('active', b.dataset.tab === target));
+      contents.forEach(c => c.classList.toggle('hidden', c.dataset.tab !== target));
+    });
   });
 })();
 goHomeBtn.addEventListener('click', () => { sfx.tap(); showHome(); });
