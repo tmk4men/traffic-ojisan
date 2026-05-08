@@ -792,11 +792,15 @@ function bakeCarSprite(type){
   CAR_SPRITES[t] = bakeCarSprite(t);
 });
 
-// 背景画像（ロード完了まではフォールバック塗り）
+// 背景画像（朝・夜の2枚をレベルでクロスフェード）
 const bgImg = new Image();
 let bgImgReady = false;
 bgImg.onload = () => { bgImgReady = true; };
 bgImg.src = 'bg.png';
+const bgMorningImg = new Image();
+let bgMorningImgReady = false;
+bgMorningImg.onload = () => { bgMorningImgReady = true; };
+bgMorningImg.src = 'bg-morning.png';
 
 // 顔スプライト（運転手の激怒・警官の怒鳴り）
 function bakeAngryDriverFace(){
@@ -1630,7 +1634,16 @@ window.addEventListener('touchcancel', onUp, {passive:false});
 
 // ========= 描画 =========
 function drawBg(){
-  if(bgImgReady){
+  // Lv.1〜5: 朝100%, Lv.6〜15: 朝→夜にクロスフェード, Lv.16+: 夜100%
+  const t = Math.max(0, Math.min(1, (state.level - 5) / 10));
+  if(bgMorningImgReady){
+    ctx.drawImage(bgMorningImg, 0, 0, W, H);
+    if(bgImgReady && t > 0){
+      ctx.globalAlpha = t;
+      ctx.drawImage(bgImg, 0, 0, W, H);
+      ctx.globalAlpha = 1;
+    }
+  } else if(bgImgReady){
     ctx.drawImage(bgImg, 0, 0, W, H);
   } else {
     ctx.fillStyle = '#2a2a36';
