@@ -57,7 +57,7 @@
   #howto .marker{flex-shrink:0;width:26px;height:26px;border-radius:50%;
                  display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;}
   #howto .m-red{background:#d24a64;}
-  #howto .m-blk{background:#1c1c22;border:1px solid #555;}
+  #howto .m-blk{background:#3a5db8;border:1px solid #88aaff;}
   #howto .m-brn{background:#7a5230;}
   #howto .m-yel{background:#caa84a;color:#000;}
   #howto .m-pur{background:#7a3acc;}
@@ -275,11 +275,11 @@
 <div id="howto" class="hidden">
   <div class="card">
     <h2>あそびかた</h2>
-    <p>あなたは ベテラン 交通整備員。上から来る車を 種類にあわせて 「あか」「くろ」レーンに ドラッグで 誘導しよう！うまく さばくと 給料が もらえるぞ。</p>
+    <p>あなたは ベテラン 交通整備員。上から来る車を 種類にあわせて 「あか」「あお」レーンに ドラッグで 誘導しよう！うまく さばくと 給料が もらえるぞ。</p>
 
     <h3>くるま の しゅるい</h3>
     <div class="row"><div class="marker m-red">●</div><div>あか車：あかレーンへ ゆうどう</div></div>
-    <div class="row"><div class="marker m-blk">●</div><div>くろ車：くろレーンへ ゆうどう</div></div>
+    <div class="row"><div class="marker m-blk">●</div><div>あお車：あおレーンへ ゆうどう</div></div>
     <div class="row"><div class="marker m-brn">×</div><div>パトカー：さわるな！触ったら 逮捕でアウト</div></div>
     <div class="row"><div class="marker m-yel">⚡</div><div>あおり運転：とつぜん 加速する キレ気味の黄色いやつ</div></div>
     <div class="row"><div class="marker m-pur">★</div><div>救急車：タップで 道をゆずる（10びょう スロー）</div></div>
@@ -477,7 +477,7 @@ const FLOOR = {x:6, y:HUD_H+8, w:W-12, h:328};   // 徘徊エリア（広め）
 const ZONE_Y = FLOOR.y + FLOOR.h + 8;
 const ZONE_H = H - ZONE_Y - 8;
 const RED = {x:8,         y:ZONE_Y, w:W/2-12, h:ZONE_H, color:'#b8324a', edge:'#ff8090'}; // 左：あか
-const BLK = {x:W/2+4,     y:ZONE_Y, w:W/2-12, h:ZONE_H, color:'#1c1c22', edge:'#666680'}; // 右：くろ
+const BLK = {x:W/2+4,     y:ZONE_Y, w:W/2-12, h:ZONE_H, color:'#2a4078', edge:'#88aaff'}; // 右：あお
 
 // アイテム枠（右下にオーバーレイ）
 const ITEM_SIZE = 56, ITEM_MARGIN = 8;
@@ -665,7 +665,7 @@ function bakeCarSprite(type){
   const o = off.getContext('2d');
   const PAL = {
     red:    { body:'#d24a64', win:'#88ddff', tire:'#1a1a1a', hi:'#ff8aa3' },
-    black:  { body:'#222230', win:'#88ddff', tire:'#000',    hi:'#3a3a48' },
+    black:  { body:'#3a5db8', win:'#88ddff', tire:'#1a1a1a', hi:'#6a8de8' }, // 青セダン
     brown:  { body:'#ffffff', win:'#88ddff', tire:'#000',    hi:'#dddddd' }, // パトカー
     gold:   { body:'#e0a818', win:'#88ddff', tire:'#1a1a1a', hi:'#ffeb70' }, // 現金輸送車
     purple: { body:'#ffffff', win:'#88ddff', tire:'#1a1a1a', hi:'#dddddd' }, // 救急車
@@ -1204,7 +1204,7 @@ function explode(bomb){
   } else {
     // 追突事故：ガラス片（白青）＋ボディ片（車体色）
     spawnParticles(bomb.x, bomb.y, '#cce0f0', 16);
-    const bodyCol = bomb.type === 'red' ? '#d24a64' : '#1c1c22';
+    const bodyCol = bomb.type === 'red' ? '#d24a64' : '#3a5db8';
     spawnParticles(bomb.x, bomb.y, bodyCol, 18);
     state.flashColor = '#ff3344';
     sfx.crash();
@@ -1449,7 +1449,7 @@ function drawZones(){
   ctx.save();
   ctx.globalAlpha = .25;
   drawZoneIcon(RED.x+RED.w/2, RED.y+RED.h/2, '#ff5577');
-  drawZoneIcon(BLK.x+BLK.w/2, BLK.y+BLK.h/2, '#000');
+  drawZoneIcon(BLK.x+BLK.w/2, BLK.y+BLK.h/2, '#3a5db8');
   ctx.restore();
 
   // ラベル
@@ -1457,7 +1457,7 @@ function drawZones(){
   ctx.font = 'bold 14px system-ui';
   ctx.textAlign = 'center';
   ctx.fillText('あか', RED.x+RED.w/2, RED.y+18);
-  ctx.fillText('くろ', BLK.x+BLK.w/2, BLK.y+18);
+  ctx.fillText('あお', BLK.x+BLK.w/2, BLK.y+18);
 }
 
 function drawZoneIcon(cx,cy,col){
@@ -2014,7 +2014,7 @@ function makeShareCanvas(data){
     x.font = 'bold 26px system-ui';
     x.fillText('★ ハイスコアこうしん ★', SZ/2, 350);
   }
-  // 車2台（赤・黒）
+  // 車2台（赤・青）
   drawShareCar(x, SZ/2 - 130, 480, 'black');
   drawShareCar(x, SZ/2 + 130, 480, 'red');
   // ステータスタグ
