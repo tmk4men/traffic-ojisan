@@ -17,9 +17,13 @@
 <meta name="twitter:title" content="交通整備のおっさん">
 <meta name="twitter:description" content="ベテラン整備員になって 上から流れてくる車を レーン別にドラッグで誘導！">
 <meta name="twitter:image" content="https://tmk4men.github.io/traffic-ojisan/ogp.png">
+<!-- ピクセルフォント -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;}
-  html,body{margin:0;padding:0;height:100%;background:#222;overflow:hidden;font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;color:#fff;}
+  html,body{margin:0;padding:0;height:100%;background:#222;overflow:hidden;font-family:'DotGothic16','Press Start 2P',"Hiragino Kaku Gothic ProN",monospace;color:#fff;letter-spacing:0.02em;}
   #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
   canvas{background:#000;touch-action:none;display:block;box-shadow:0 0 24px rgba(0,0,0,.6);}
   .hidden{display:none !important;}
@@ -33,23 +37,23 @@
         padding:18px 16px;overflow-y:auto;}
   /* ハンバーガーメニュー */
   #menuBtn{position:absolute;top:8px;right:8px;width:42px;height:42px;border:none;
-           border-radius:10px;background:rgba(40,40,55,.92);color:#ffd24a;font-size:22px;
+           border-radius:0;background:rgba(40,40,55,.92);color:#ffd24a;font-size:22px;
            font-weight:bold;cursor:pointer;z-index:21;line-height:1;
-           border:1px solid rgba(255,210,74,.4);}
+           border:2px solid #ffd24a;}
   #menuBtn:active{transform:translateY(1px);}
   #menuPop{position:absolute;top:54px;right:8px;background:rgba(20,20,28,.97);
-           border:2px solid #ffd24a;border-radius:10px;padding:6px;z-index:21;
+           border:2px solid #ffd24a;border-radius:0;padding:6px;z-index:21;
            display:flex;flex-direction:column;gap:2px;min-width:160px;
-           box-shadow:0 4px 16px rgba(0,0,0,.5);}
+           box-shadow:4px 4px 0 rgba(0,0,0,.5);}
   #menuPop .mItem{background:transparent;color:#fff;border:none;padding:12px 14px;
-                  text-align:left;cursor:pointer;font-size:14px;border-radius:6px;}
+                  text-align:left;cursor:pointer;font-size:14px;border-radius:0;}
   #menuPop .mItem:active{background:rgba(255,210,74,.18);}
   /* あそびかたモーダル */
   #howto{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:30;
          display:flex;align-items:center;justify-content:center;padding:18px;}
-  #howto .card{background:#222230;border:2px solid #ffd24a;border-radius:14px;
+  #howto .card{background:#222230;border:3px solid #ffd24a;border-radius:0;
                padding:18px 20px;max-width:340px;width:100%;max-height:84vh;
-               overflow-y:auto;color:#fff;}
+               overflow-y:auto;color:#fff;box-shadow:6px 6px 0 rgba(0,0,0,.5);}
   #howto h2{margin:0 0 12px;color:#ffd24a;text-align:center;font-size:20px;}
   #howto h3{margin:14px 0 6px;color:#ffd24a;font-size:14px;border-bottom:1px solid rgba(255,210,74,.3);padding-bottom:4px;}
   #howto p{font-size:13px;line-height:1.7;margin:4px 0;}
@@ -62,41 +66,46 @@
   #howto .m-yel{background:#caa84a;color:#000;}
   #howto .m-pur{background:#7a3acc;}
   #howto .m-gld{background:#e0a818;color:#000;}
-  #howto .closeBtn{margin-top:14px;width:100%;padding:11px;border:none;border-radius:22px;
-                   background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:15px;}
+  #howto .closeBtn{margin-top:14px;width:100%;padding:11px;border:3px solid #a06c10;border-radius:0;
+                   background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:15px;
+                   box-shadow:0 4px 0 #a06c10;}
+  #howto .closeBtn:active{transform:translateY(2px);box-shadow:0 2px 0 #a06c10;}
   #home h1{font-size:26px;margin:6px 0 10px;letter-spacing:.05em;color:#ffd24a;text-shadow:0 2px 0 #000;}
   #home .stats{display:flex;gap:14px;margin:6px 0 10px;font-size:14px;}
-  #home .stats .pill{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);
-                     border-radius:16px;padding:6px 12px;}
+  #home .stats .pill{background:rgba(0,0,0,.45);border:2px solid rgba(255,210,74,.5);
+                     border-radius:0;padding:6px 12px;}
   #home .stats b{color:#ffcc33;margin-left:4px;}
   #home .shop{width:100%;max-width:320px;margin:8px 0;}
   #home .shop h3{margin:8px 0;font-size:14px;text-align:center;opacity:.7;letter-spacing:.2em;}
-  #home .shopItem{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-                  border-radius:12px;padding:10px 12px;margin-bottom:8px;}
+  #home .shopItem{background:rgba(255,255,255,.06);border:2px solid rgba(255,210,74,.4);
+                  border-radius:0;padding:10px 12px;margin-bottom:8px;}
   #home .shopItem .row{display:flex;align-items:center;gap:10px;}
-  #home .shopItem .icon{width:42px;height:42px;border-radius:8px;background:#3a3a48;
+  #home .shopItem .icon{width:42px;height:42px;border-radius:0;background:#3a3a48;
+                        border:2px solid #555;
                         display:flex;align-items:center;justify-content:center;font-size:22px;}
   #home .shopItem .info{flex:1;min-width:0;}
   #home .shopItem .name{font-weight:bold;font-size:14px;}
   #home .shopItem .desc{font-size:11px;opacity:.7;}
   #home .shopItem .own{font-size:11px;color:#ffd24a;}
-  #home .shopItem button{margin-top:8px;width:100%;padding:8px;border:none;border-radius:18px;
-                         background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:13px;}
-  #home .shopItem button:disabled{background:#444;color:#888;cursor:not-allowed;}
-  #home #startBtn{margin-top:12px;padding:14px 36px;font-size:20px;border:none;border-radius:30px;
+  #home .shopItem button{margin-top:8px;width:100%;padding:8px;border:3px solid #a06c10;border-radius:0;
+                         background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:13px;
+                         box-shadow:0 3px 0 #a06c10;}
+  #home .shopItem button:active{transform:translateY(1px);box-shadow:0 2px 0 #a06c10;}
+  #home .shopItem button:disabled{background:#444;color:#888;cursor:not-allowed;border-color:#222;box-shadow:none;}
+  #home #startBtn{margin-top:12px;padding:14px 36px;font-size:20px;border:4px solid #993322;border-radius:0;
                   background:#ff6644;color:#fff;font-weight:bold;cursor:pointer;
-                  box-shadow:0 4px 0 #993322;}
-  #home #startBtn:active{transform:translateY(2px);box-shadow:0 2px 0 #993322;}
+                  box-shadow:0 6px 0 #993322;letter-spacing:0.1em;}
+  #home #startBtn:active{transform:translateY(4px);box-shadow:0 2px 0 #993322;}
   #home .useTicket{width:100%;max-width:320px;margin:8px 0;background:rgba(255,102,204,.12);
-                    border:1px solid rgba(255,102,204,.5);border-radius:10px;padding:8px 12px;
+                    border:2px solid rgba(255,102,204,.7);border-radius:0;padding:8px 12px;
                     font-size:13px;}
   #home .useTicket label{display:flex;align-items:center;gap:6px;cursor:pointer;}
   #home .useTicket input{transform:scale(1.2);}
   #home .missions{width:100%;max-width:320px;margin-top:14px;}
   #home .missions h3{margin:6px 0;font-size:13px;text-align:center;opacity:.8;letter-spacing:.2em;color:#88ddff;}
   #home .missions ul{list-style:none;padding:0;margin:0;}
-  #home .missions li{background:rgba(136,221,255,.08);border:1px solid rgba(136,221,255,.25);
-                     border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:12px;}
+  #home .missions li{background:rgba(136,221,255,.08);border:2px solid rgba(136,221,255,.4);
+                     border-radius:0;padding:8px 10px;margin-bottom:6px;font-size:12px;}
   #home .missions li.done{background:rgba(136,221,136,.15);border-color:rgba(136,221,136,.5);opacity:.85;}
   #home .missions .mLine1{display:flex;align-items:center;gap:6px;font-weight:bold;}
   #home .missions .mLine1 .name{flex:1;}
@@ -108,14 +117,14 @@
   #home .history{width:100%;max-width:320px;margin-top:12px;font-size:12px;}
   #home .history h3{margin:6px 0;opacity:.7;letter-spacing:.2em;text-align:center;}
   #home .history ol{list-style:none;padding:0;margin:0;background:rgba(0,0,0,.25);
-                    border-radius:10px;padding:8px 12px;}
+                    border:2px solid rgba(255,255,255,.15);border-radius:0;padding:8px 12px;}
   #home .history li{padding:3px 0;display:flex;justify-content:space-between;}
   #home .history li.empty{justify-content:center;opacity:.4;}
   /* デイリーログイン */
   #daily{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
          background:rgba(0,0,0,.78);z-index:20;}
-  #daily .box{background:#2a2a36;border:2px solid #ffcc33;border-radius:18px;padding:24px 30px;
-              text-align:center;max-width:280px;}
+  #daily .box{background:#2a2a36;border:3px solid #ffcc33;border-radius:0;padding:24px 30px;
+              text-align:center;max-width:280px;box-shadow:6px 6px 0 rgba(0,0,0,.5);}
   #daily h2{margin:0 0 10px;color:#ffd24a;}
   #daily .day{font-size:13px;opacity:.7;margin:4px 0;}
   #daily .streakDots{display:flex;justify-content:center;gap:5px;margin:8px 0;}
@@ -129,21 +138,26 @@
   @keyframes pulse{from{transform:scale(1);}to{transform:scale(1.15);}}
   #daily .amt{font-size:32px;font-weight:bold;color:#ffd24a;margin:8px 0;}
   #daily .extra{color:#ffaa66;font-size:13px;margin-bottom:6px;}
-  #daily button{margin-top:14px;padding:10px 28px;border:none;border-radius:20px;
-                background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:15px;}
+  #daily button{margin-top:14px;padding:10px 28px;border:3px solid #a06c10;border-radius:0;
+                background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:15px;
+                box-shadow:0 4px 0 #a06c10;}
+  #daily button:active{transform:translateY(2px);box-shadow:0 2px 0 #a06c10;}
   /* ゲームオーバー画面 */
   #gameover{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
             flex-direction:column;background:rgba(0,0,0,.78);z-index:10;text-align:center;padding:24px;}
   #gameover h1{font-size:32px;margin:0 0 10px;color:#ff6644;text-shadow:0 2px 0 #000;}
   #gameover .big{font-size:40px;font-weight:bold;color:#ffd24a;margin:6px 0;}
   #gameover .gain{font-size:16px;margin:4px 0;color:#ffaa66;}
-  #gameover button{margin-top:18px;padding:12px 28px;font-size:16px;border:none;border-radius:24px;
-                   background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;}
+  #gameover button{margin-top:18px;padding:12px 28px;font-size:16px;border:3px solid #a06c10;border-radius:0;
+                   background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;
+                   box-shadow:0 4px 0 #a06c10;}
+  #gameover button:active{transform:translateY(2px);box-shadow:0 2px 0 #a06c10;}
   #gameover .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
   #gameover .actions button{margin-top:18px;}
-  #gameover .shareBtn{background:linear-gradient(180deg,#5cc5ff,#2a7ed8);color:#fff;}
-  #gameover .shareCard{margin-top:14px;max-width:280px;width:80%;border-radius:14px;
-                       box-shadow:0 6px 18px rgba(0,0,0,.5);display:none;}
+  #gameover .shareBtn{background:#2a7ed8;color:#fff;border-color:#1a4a7a !important;box-shadow:0 4px 0 #1a4a7a !important;}
+  #gameover .shareBtn:active{box-shadow:0 2px 0 #1a4a7a !important;}
+  #gameover .shareCard{margin-top:14px;max-width:280px;width:80%;border:3px solid #ffd24a;border-radius:0;
+                       box-shadow:6px 6px 0 rgba(0,0,0,.5);display:none;}
 </style>
 </head>
 <body>
@@ -1454,7 +1468,7 @@ function drawZones(){
 
   // ラベル
   ctx.fillStyle = '#fff';
-  ctx.font = 'bold 14px system-ui';
+  ctx.font = 'bold 14px "DotGothic16", monospace';
   ctx.textAlign = 'center';
   ctx.fillText('あか', RED.x+RED.w/2, RED.y+18);
   ctx.fillText('あお', BLK.x+BLK.w/2, BLK.y+18);
@@ -1516,7 +1530,7 @@ function drawHud(){
   // SCORE（左）
   const overBest = state.score > save.best;
   ctx.fillStyle = overBest ? '#ffd24a' : '#fff';
-  ctx.font = 'bold 15px system-ui';
+  ctx.font = 'bold 15px "DotGothic16", monospace';
   ctx.textAlign = 'left';
   ctx.fillText(`SCORE ${state.score}`, 10, 22);
   // BEST（中央）
@@ -1625,12 +1639,12 @@ function drawItem(){
   ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2); ctx.fill();
   // ×N 表記
   ctx.fillStyle = '#fff';
-  ctx.font = 'bold 13px system-ui';
+  ctx.font = 'bold 13px "DotGothic16", monospace';
   ctx.textAlign = 'right';
   ctx.fillText('×'+state.itemCount, x+s-5, y+s-5);
   // ラベル
   ctx.fillStyle = active ? '#ffd24a' : '#888';
-  ctx.font = 'bold 9px system-ui';
+  ctx.font = 'bold 9px "DotGothic16", monospace';
   ctx.textAlign = 'center';
   ctx.fillText('ぜんめつ', cx, y+10);
   ctx.restore();
@@ -1651,7 +1665,7 @@ function drawScoreFloaters(){
     const a = Math.max(0, f.life / f.max);
     ctx.globalAlpha = a;
     ctx.fillStyle = f.mul >= 5 ? '#ff66cc' : f.mul >= 3 ? '#ffd24a' : f.mul >= 2 ? '#aaffaa' : '#ffffff';
-    ctx.font = 'bold ' + (14 + f.mul*2) + 'px system-ui';
+    ctx.font = 'bold ' + (14 + f.mul*2) + 'px "DotGothic16", monospace';
     ctx.textAlign = 'center';
     ctx.lineWidth = 3;
     ctx.strokeStyle = '#000';
@@ -1683,7 +1697,7 @@ function drawSlowOverlay(){
     ctx.translate(W/2, HUD_H + 70);
     ctx.scale(sc, sc);
     ctx.globalAlpha = a;
-    ctx.font = 'bold 24px system-ui';
+    ctx.font = 'bold 24px "DotGothic16", monospace';
     ctx.textAlign = 'center';
     ctx.lineWidth = 5;
     ctx.strokeStyle = '#3a1a4a';
@@ -1697,7 +1711,7 @@ function drawSlowOverlay(){
     ctx.fillStyle = 'rgba(150, 100, 220, '+ (0.06*fade) +')';
     ctx.fillRect(0,0,W,H);
     // 残り秒（右上、Lv の下）
-    ctx.font = 'bold 12px system-ui';
+    ctx.font = 'bold 12px "DotGothic16", monospace';
     ctx.textAlign = 'right';
     ctx.lineWidth = 3;
     ctx.strokeStyle = '#3a1a4a';
@@ -1722,7 +1736,7 @@ function drawBonus(){
   roundRect(x-90, y-14, 180, 32, 14, false, true);
   // テキスト
   ctx.fillStyle = '#ffd24a';
-  ctx.font = 'bold 13px system-ui';
+  ctx.font = 'bold 13px "DotGothic16", monospace';
   ctx.textAlign = 'center';
   ctx.fillText(`★ボーナス！ +5コイン／個 ★`, x, y);
   // 残り時間バー
@@ -1745,7 +1759,7 @@ function drawCombo(){
   roundRect(x-58, y-12, 116, 28, 14, false, true);
   // テキスト
   ctx.fillStyle = tier;
-  ctx.font = 'bold 14px system-ui';
+  ctx.font = 'bold 14px "DotGothic16", monospace';
   ctx.textAlign = 'center';
   ctx.fillText(`COMBO ×${mul} (${state.combo})`, x, y+3);
   // 残り時間バー
@@ -1994,24 +2008,24 @@ function makeShareCanvas(data){
   }
   // タイトル
   x.fillStyle = '#ffd24a';
-  x.font = 'bold 44px system-ui';
+  x.font = 'bold 44px "DotGothic16", monospace';
   x.textAlign = 'center';
   x.fillText('交通整備のおっさん', SZ/2, 84);
   x.fillStyle = '#aaa';
-  x.font = '20px system-ui';
+  x.font = '20px "DotGothic16", monospace';
   x.fillText('Traffic Officer Ojisan', SZ/2, 112);
   // SCORE ラベル
   x.fillStyle = '#fff';
-  x.font = '24px system-ui';
+  x.font = '24px "DotGothic16", monospace';
   x.fillText('SCORE', SZ/2, 180);
   // 大スコア
   x.fillStyle = data.isNewBest ? '#ff8aa3' : '#ffd24a';
-  x.font = 'bold 132px system-ui';
+  x.font = 'bold 132px "DotGothic16", monospace';
   x.fillText(String(data.score), SZ/2, 308);
   // ニューレコード
   if(data.isNewBest){
     x.fillStyle = '#ff66cc';
-    x.font = 'bold 26px system-ui';
+    x.font = 'bold 26px "DotGothic16", monospace';
     x.fillText('★ ハイスコアこうしん ★', SZ/2, 350);
   }
   // 車2台（赤・青）
@@ -2021,12 +2035,12 @@ function makeShareCanvas(data){
   x.fillStyle = 'rgba(255,255,255,.10)';
   roundRectPath(x, 60, 580, SZ-120, 60, 14); x.fill();
   x.fillStyle = '#fff';
-  x.font = 'bold 22px system-ui';
+  x.font = 'bold 22px "DotGothic16", monospace';
   x.textAlign = 'center';
   x.fillText(`Lv.${data.level}    さいこう ${data.best}    最大コンボ ${data.maxCombo}`, SZ/2, 618);
   // 下部 URL
   x.fillStyle = '#88ddff';
-  x.font = '20px system-ui';
+  x.font = '20px "DotGothic16", monospace';
   x.fillText(SHARE_URL, SZ/2, 678);
   return c;
 }
