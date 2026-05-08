@@ -2104,10 +2104,6 @@ function loop(t){
       if(b._exploded && !b._dead) explode(b);
     });
     state.bombs = state.bombs.filter(b=>!b._dead);
-    // 車が増え過ぎたら警告クラクション（場上の未仕分け数で判定）
-    const onField = state.bombs.reduce((n,b)=> n + (b.state!=='placed' ? 1 : 0), 0);
-    if(onField >= 12) sfx.honk(true);
-    else if(onField >= 8) sfx.honk(false);
     state.particles.forEach(p=>{
       p.x += p.vx; p.y += p.vy;
       p.vy += 0.2;
