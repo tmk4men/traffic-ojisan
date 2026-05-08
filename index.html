@@ -226,7 +226,7 @@
   <h1>交通整備のおっさん</h1>
   <div class="stats">
     <div class="pill"><svg class="ic"><use href="#ic-trophy"/></svg> さいこう <b id="bestVal">0</b></div>
-    <div class="pill"><svg class="ic"><use href="#ic-coin"/></svg> きゅうりょう <b id="coinsVal">0</b>円</div>
+    <div class="pill"><svg class="ic"><use href="#ic-coin"/></svg> ちょきん <b id="coinsVal">0</b>円</div>
   </div>
   <div class="shop">
     <h3>ショップ</h3>
@@ -511,6 +511,7 @@ const state = {
   flash: 0,
   flashColor: '#fff',
   particles: [],
+  angryFaces: [],  // 追突/逮捕時に窓から飛び出す顔アップ
   gameOver: false,
   itemCount: 1,
   itemMax: 3,
@@ -741,6 +742,87 @@ const bgImg = new Image();
 let bgImgReady = false;
 bgImg.onload = () => { bgImgReady = true; };
 bgImg.src = 'bg.png';
+
+// 顔スプライト（運転手の激怒・警官の怒鳴り）
+function bakeAngryDriverFace(){
+  const off = document.createElement('canvas');
+  off.width = 16; off.height = 16;
+  const o = off.getContext('2d');
+  // 顔（肌色）
+  o.fillStyle = '#f5c089';
+  o.fillRect(4, 3, 8, 11);
+  o.fillRect(3, 4, 1, 9);
+  o.fillRect(12, 4, 1, 9);
+  o.fillRect(2, 5, 1, 7);
+  o.fillRect(13, 5, 1, 7);
+  // 髪（黒、ぼさぼさ）
+  o.fillStyle = '#1a1a1a';
+  o.fillRect(3, 0, 10, 2);
+  o.fillRect(2, 1, 12, 3);
+  o.fillRect(2, 4, 2, 1);
+  o.fillRect(12, 4, 2, 1);
+  // 眉（V字怒り）
+  o.fillRect(4, 6, 2, 1);
+  o.fillRect(5, 5, 1, 1);
+  o.fillRect(10, 6, 2, 1);
+  o.fillRect(10, 5, 1, 1);
+  // X目
+  o.fillStyle = '#000';
+  o.fillRect(4, 7, 1, 1); o.fillRect(5, 8, 1, 1); o.fillRect(4, 9, 1, 1);
+  o.fillRect(5, 7, 1, 1); o.fillRect(4, 8, 1, 1); o.fillRect(5, 9, 1, 1);
+  o.fillRect(10, 7, 1, 1); o.fillRect(11, 8, 1, 1); o.fillRect(10, 9, 1, 1);
+  o.fillRect(11, 7, 1, 1); o.fillRect(10, 8, 1, 1); o.fillRect(11, 9, 1, 1);
+  // 怒鳴る口（開く）
+  o.fillStyle = '#3a1a1a';
+  o.fillRect(6, 11, 4, 2);
+  o.fillStyle = '#fff';
+  o.fillRect(6, 11, 1, 1); o.fillRect(8, 11, 1, 1);
+  // ほっぺの赤
+  o.fillStyle = '#cc4455';
+  o.globalAlpha = 0.55;
+  o.fillRect(3, 9, 1, 2);
+  o.fillRect(12, 9, 1, 2);
+  o.globalAlpha = 1;
+  return off;
+}
+function bakeArrestCopFace(){
+  const off = document.createElement('canvas');
+  off.width = 16; off.height = 16;
+  const o = off.getContext('2d');
+  // 顔
+  o.fillStyle = '#f5c089';
+  o.fillRect(4, 5, 8, 9);
+  o.fillRect(3, 6, 1, 7);
+  o.fillRect(12, 6, 1, 7);
+  // 警察帽（紺）
+  o.fillStyle = '#2a4a98';
+  o.fillRect(2, 1, 12, 3);
+  o.fillRect(3, 0, 10, 1);
+  // 帽子のつば（濃紺）
+  o.fillStyle = '#1a2a58';
+  o.fillRect(2, 4, 12, 1);
+  // バッジ（金）
+  o.fillStyle = '#ffd24a';
+  o.fillRect(7, 2, 2, 1);
+  // 眉（怒り）
+  o.fillStyle = '#1a1a1a';
+  o.fillRect(4, 7, 2, 1);
+  o.fillRect(10, 7, 2, 1);
+  // 目（睨み）
+  o.fillStyle = '#000';
+  o.fillRect(5, 8, 1, 2);
+  o.fillRect(10, 8, 1, 2);
+  // 怒鳴る口（大きく開く）
+  o.fillStyle = '#3a1a1a';
+  o.fillRect(6, 11, 4, 3);
+  o.fillStyle = '#cc3344';
+  o.fillRect(7, 12, 2, 1);
+  return off;
+}
+const FACE_SPRITES = {
+  driver: bakeAngryDriverFace(),
+  cop: bakeArrestCopFace(),
+};
 
 // ========= 車 =========
 class Bomb{
@@ -1209,17 +1291,23 @@ function spawnParticles(x,y,color,n=18){
 
 function explode(bomb){
   if(bomb._dead) return;
+  // 共通：窓から顔出して怒る演出
+  state.angryFaces.push({
+    x: bomb.x, y: bomb.y - 8,
+    life: 700, max: 700,
+    type: bomb.type === 'brown' ? 'cop' : 'driver',
+  });
   if(bomb.type === 'brown'){
-    // パトカーに触れて逮捕：赤と青の点滅パーティクル
-    spawnParticles(bomb.x, bomb.y, '#ff3344', 14);
-    spawnParticles(bomb.x, bomb.y, '#3366ff', 14);
+    // パトカーに触れて逮捕：赤と青の点滅パーティクル（控えめ）
+    spawnParticles(bomb.x, bomb.y, '#ff3344', 8);
+    spawnParticles(bomb.x, bomb.y, '#3366ff', 8);
     state.flashColor = '#3366ff';
     sfx.arrest();
   } else {
-    // 追突事故：ガラス片（白青）＋ボディ片（車体色）
-    spawnParticles(bomb.x, bomb.y, '#cce0f0', 16);
+    // 追突事故：ガラス片＋ボディ片（控えめにして顔アップを主役に）
+    spawnParticles(bomb.x, bomb.y, '#cce0f0', 10);
     const bodyCol = bomb.type === 'red' ? '#d24a64' : '#3a5db8';
-    spawnParticles(bomb.x, bomb.y, bodyCol, 18);
+    spawnParticles(bomb.x, bomb.y, bodyCol, 10);
     state.flashColor = '#ff3344';
     sfx.crash();
   }
@@ -1227,7 +1315,7 @@ function explode(bomb){
   state.flash = 1;
   bomb._exploded = true;
   bomb._dead = true;
-  setTimeout(endGame, 500);
+  setTimeout(endGame, 700);
 }
 
 function placeBomb(bomb, zoneKey){
@@ -1660,6 +1748,30 @@ function drawParticles(){
   ctx.globalAlpha = 1;
 }
 
+// 追突/逮捕時の「窓から顔出して怒る」アップ演出
+function drawAngryFaces(){
+  if(state.angryFaces.length === 0) return;
+  const prevSmooth = ctx.imageSmoothingEnabled;
+  ctx.imageSmoothingEnabled = false;
+  for(const f of state.angryFaces){
+    const t = 1 - f.life / f.max;        // 0→1（経過率）
+    // 序盤に膨らむ（pop-in）→中盤キープ→終盤フェード
+    const pop = Math.min(1, t*4);          // 0..1, 最初の25%で1まで
+    const scale = 3.0 + pop*0.6;
+    const sw = 16 * scale, sh = 16 * scale;
+    // 揺れ（怒鳴ってる感）
+    const shakeX = Math.sin(performance.now()*0.04 + f.x) * 1.8;
+    const shakeY = Math.cos(performance.now()*0.05 + f.y) * 1.2;
+    // 終盤フェード
+    const alpha = f.life > f.max*0.25 ? 1 : f.life / (f.max*0.25);
+    ctx.globalAlpha = alpha;
+    const sprite = FACE_SPRITES[f.type] || FACE_SPRITES.driver;
+    ctx.drawImage(sprite, f.x - sw/2 + shakeX, f.y - sh/2 + shakeY, sw, sh);
+  }
+  ctx.globalAlpha = 1;
+  ctx.imageSmoothingEnabled = prevSmooth;
+}
+
 function drawScoreFloaters(){
   state.scoreFloaters.forEach(f=>{
     const a = Math.max(0, f.life / f.max);
@@ -1850,6 +1962,9 @@ function loop(t){
       p.life -= dt;
     });
     state.particles = state.particles.filter(p=>p.life>0);
+    // 怒り顔アップの寿命更新
+    state.angryFaces.forEach(f => f.life -= dt);
+    state.angryFaces = state.angryFaces.filter(f => f.life > 0);
     // ボーナスステージのカウントダウン
     if(state.bonus.active){
       state.bonus.timeLeft -= dt;
@@ -1886,6 +2001,7 @@ function loop(t){
   const order = ['placed','wander','enter','drag'];
   state.bombs.slice().sort((a,b)=>order.indexOf(a.state)-order.indexOf(b.state)).forEach(b=>b.draw());
   drawParticles();
+  drawAngryFaces();   // 顔アップは粒子より前面
   drawScoreFloaters();
   drawHud();
   drawCombo();
@@ -1910,6 +2026,7 @@ function loop(t){
 function startGame(){
   state.bombs = [];
   state.particles = [];
+  state.angryFaces = [];
   state.score = 0;
   state.level = 1;
   state.spawnInterval = 1900;
