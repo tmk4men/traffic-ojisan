@@ -17,6 +17,12 @@
 <meta name="twitter:title" content="交通整備のおっさん">
 <meta name="twitter:description" content="ベテラン整備員になって 上から流れてくる車を レーン別にドラッグで誘導！">
 <meta name="twitter:image" content="https://tmk4men.github.io/traffic-ojisan/ogp.png">
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#ffd24a">
+<link rel="icon" type="image/webp" sizes="192x192" href="icon-192.webp">
+<link rel="icon" type="image/webp" sizes="512x512" href="icon-512.webp">
+<link rel="apple-touch-icon" href="icon-192.webp">
 <!-- ピクセルフォント -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,8 +39,11 @@
   .ic-xl{width:2.4em;height:2.4em;vertical-align:-0.45em;}
   /* ホーム画面 */
   #home{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
-        background:linear-gradient(180deg,#2c2c3a 0%,#1a1a26 100%);z-index:10;
-        padding:18px 16px;overflow-y:auto;}
+        background:
+          linear-gradient(180deg,rgba(20,20,38,.45) 0%,rgba(20,20,38,.10) 30%,rgba(20,20,38,.70) 100%),
+          url('bg-home.webp') center bottom / cover no-repeat,
+          #1a1a26;
+        z-index:10;padding:18px 16px;overflow-y:auto;}
   /* ハンバーガーメニュー */
   #menuBtn{position:absolute;top:8px;right:8px;width:42px;height:42px;border:none;
            border-radius:0;background:rgba(40,40,55,.92);color:#ffd24a;font-size:22px;
