@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>OGP画像ジェネレータ - 交通整備のおっさん</title>
+<style>
+  body{font-family:system-ui;background:#1a1a26;color:#fff;margin:0;padding:20px;text-align:center;}
+  h1{color:#ffd24a;}
+  canvas{max-width:100%;height:auto;border:2px solid #444;margin:20px auto;display:block;}
+  button{padding:12px 28px;font-size:16px;border:none;border-radius:24px;
+         background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;margin:6px;}
+  p.hint{opacity:.7;font-size:13px;}
+</style>
+</head>
+<body>
+<h1>OGP画像ジェネレータ</h1>
+<p class="hint">「ダウンロード」を押して保存 → リポジトリ直下に <code>ogp.png</code> として配置 → commit & push</p>
+<canvas id="ogp" width="1200" height="630"></canvas>
+<div>
+  <button id="dl">ogp.png をダウンロード</button>
+  <button id="re">再生成</button>
+</div>
+<script>
+(() => {
+const cv = document.getElementById('ogp');
+const ctx = cv.getContext('2d');
+const W = 1200, H = 630;
+
+// 車のドット絵スプライト（index.html と同一）
+const CAR_SPRITE_W = 24, CAR_SPRITE_H = 14;
+function bakeCarSprite(type){
+  const off = document.createElement('canvas');
+  off.width = CAR_SPRITE_W; off.height = CAR_SPRITE_H;
+  const o = off.getContext('2d');
+  const PAL = {
+    red:    { body:'#d24a64', win:'#88ddff', tire:'#1a1a1a', hi:'#ff8aa3' },
+    black:  { body:'#222230', win:'#88ddff', tire:'#000',    hi:'#3a3a48' },
+    brown:  { body:'#ffffff', win:'#88ddff', tire:'#000',    hi:'#dddddd' },
+    gold:   { body:'#e0a818', win:'#88ddff', tire:'#1a1a1a', hi:'#ffeb70' },
+    purple: { body:'#ffffff', win:'#88ddff', tire:'#1a1a1a', hi:'#dddddd' },
+  };
+  const p = PAL[type] || PAL.black;
+  o.fillStyle = p.body; o.fillRect(1, 7, 22, 5); o.fillRect(5, 3, 14, 4);
+  o.fillStyle = p.win; o.fillRect(7, 4, 4, 3); o.fillRect(13, 4, 4, 3);
+  o.fillStyle = p.tire; o.fillRect(3, 11, 4, 3); o.fillRect(17, 11, 4, 3);
+  o.fillStyle = p.hi; o.fillRect(21, 7, 1, 1); o.fillRect(2, 7, 1, 1);
+  if(type === 'brown'){
+    o.fillStyle = '#1c1c22'; o.fillRect(1, 9, 22, 2);
+    o.fillStyle = '#ff3344'; o.fillRect(10, 1, 2, 2);
+    o.fillStyle = '#3344ff'; o.fillRect(12, 1, 2, 2);
+  } else if(type === 'gold'){
+    o.fillStyle = '#000'; o.fillRect(10, 8, 1, 4); o.fillRect(13, 8, 1, 4); o.fillRect(11, 9, 2, 1);
+    o.fillStyle = '#ffeb70'; o.fillRect(11, 8, 1, 1); o.fillRect(12, 11, 1, 1);
+  } else if(type === 'purple'){
+    o.fillStyle = '#cc3344'; o.fillRect(11, 8, 2, 3); o.fillRect(10, 9, 4, 1);
+    o.fillStyle = '#ff5577'; o.fillRect(8, 1, 2, 2);
+    o.fillStyle = '#5577ff'; o.fillRect(14, 1, 2, 2);
+  }
+  return off;
+}
+const CAR_SPRITES = {};
+['red','black','brown','gold','purple'].forEach(t => CAR_SPRITES[t] = bakeCarSprite(t));
+
+function drawCar(cx, cy, type, scale){
+  const sw = CAR_SPRITE_W * scale, sh = CAR_SPRITE_H * scale;
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.beginPath(); ctx.ellipse(cx, cy + sh/2 + 6, sw*0.45, 10, 0, 0, Math.PI*2); ctx.fill();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(CAR_SPRITES[type], cx - sw/2, cy - sh/2, sw, sh);
+}
+
+function render(){
+  // 背景：縦グラデ
+  const bg = ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#2c2c3a'); bg.addColorStop(1,'#1a1a26');
+  ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+
+  // アスファルトの帯（下半分）
+  ctx.fillStyle = '#2a2a32';
+  ctx.fillRect(0, H*0.55, W, H*0.45);
+  // 白破線（車線マーク）
+  ctx.fillStyle = 'rgba(255,255,255,.4)';
+  for(let i=0;i<14;i++){
+    ctx.fillRect(20 + i*88, H*0.78, 50, 6);
+  }
+
+  // 装飾：散らばる星
+  for(let i=0;i<40;i++){
+    const sx = Math.random()*W, sy = Math.random()*H*0.55;
+    const r = 1 + Math.random()*2.5;
+    ctx.fillStyle = 'rgba(255,255,255,'+ (0.18 + Math.random()*0.4) +')';
+    ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI*2); ctx.fill();
+  }
+
+  // タイトル
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffd24a';
+  ctx.font = 'bold 96px system-ui, sans-serif';
+  ctx.fillText('交通整備のおっさん', W/2, 150);
+  ctx.fillStyle = '#aaa';
+  ctx.font = '32px system-ui, sans-serif';
+  ctx.fillText('Traffic Officer Ojisan', W/2, 195);
+
+  // サブコピー
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 36px system-ui, sans-serif';
+  ctx.fillText('車を レーン別に ドラッグで 誘導せよ！', W/2, 260);
+
+  // 車を5台並べる（種類見せ）
+  const carY = H*0.65;
+  const types = ['black', 'red', 'brown', 'gold', 'purple'];
+  const SCALE = 7;
+  const spacing = W / (types.length + 1);
+  types.forEach((t, i) => {
+    drawCar(spacing*(i+1), carY, t, SCALE);
+  });
+
+  // 下部URL
+  ctx.fillStyle = '#88ddff';
+  ctx.font = '28px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('tmk4men.github.io/traffic-ojisan', W/2, H - 32);
+}
+
+render();
+
+document.getElementById('dl').addEventListener('click', () => {
+  cv.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ogp.png';
+    a.click();
+    setTimeout(()=> URL.revokeObjectURL(a.href), 1000);
+  }, 'image/png');
+});
+document.getElementById('re').addEventListener('click', render);
+})();
+</script>
+</body>
+</html>
