@@ -3,27 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>交通整備のおっさん</title>
+<title>トラフィックおじさん</title>
 <meta name="description" content="ベテラン交通整備員になって 上から流れてくる車を レーン別にドラッグで誘導しよう。ドット絵カジュアルゲーム。">
 <!-- OGP / SNS シェア -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="交通整備のおっさん">
+<meta property="og:title" content="トラフィックおじさん">
 <meta property="og:description" content="ベテラン整備員になって 上から流れてくる車を レーン別にドラッグで誘導しよう。ドット絵カジュアルゲーム。">
 <meta property="og:url" content="https://tmk4men.github.io/traffic-ojisan/">
 <meta property="og:image" content="https://tmk4men.github.io/traffic-ojisan/ogp.png">
-<meta property="og:site_name" content="交通整備のおっさん">
+<meta property="og:site_name" content="トラフィックおじさん">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="交通整備のおっさん">
+<meta name="twitter:title" content="トラフィックおじさん">
 <meta name="twitter:description" content="ベテラン整備員になって 上から流れてくる車を レーン別にドラッグで誘導！">
 <meta name="twitter:image" content="https://tmk4men.github.io/traffic-ojisan/ogp.png">
 <!-- PWA -->
-<link rel="manifest" href="manifest.webmanifest?v=2">
+<link rel="manifest" href="manifest.webmanifest?v=3">
 <meta name="theme-color" content="#ffd24a">
-<link rel="icon" href="favicon.ico?v=2" sizes="any">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=2">
-<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png?v=2">
+<link rel="icon" href="favicon.ico?v=3" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=3">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png?v=3">
 <!-- ピクセルフォント -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -298,7 +298,7 @@
   <div id="menuPop" class="hidden">
     <button class="mItem" data-action="howto">あそびかた</button>
   </div>
-  <h1>交通整備のおっさん</h1>
+  <h1>トラフィックおじさん</h1>
   <div class="stats">
     <div class="pill"><svg class="ic"><use href="#ic-trophy"/></svg> さいこう <b id="bestVal">0</b></div>
     <div class="pill"><svg class="ic"><use href="#ic-coin"/></svg> ちょきん <b id="coinsVal">0</b>円</div>
@@ -817,14 +817,17 @@ function bakeCarSprite(type){
     o.fillRect(11, 8, 1, 1);
     o.fillRect(12, 11, 1, 1);
   } else if(type === 'purple'){
-    // 救急車：赤十字＋サイレン
-    o.fillStyle = '#cc3344';
-    o.fillRect(11, 8, 2, 3);
-    o.fillRect(10, 9, 4, 1);
-    o.fillStyle = '#ff5577';
-    o.fillRect(8, 1, 2, 2);
-    o.fillStyle = '#5577ff';
-    o.fillRect(14, 1, 2, 2);
+    // 救急車：でかい赤十字＋赤サイレン（パトカーと混同しないよう赤一色で）
+    o.fillStyle = '#dd2233';
+    // 縦棒（窓の隙間〜車体下まで貫通）
+    o.fillRect(11, 4, 2, 8);
+    // 太い横棒
+    o.fillRect(8, 8, 8, 2);
+    // 屋根の赤サイレン（幅広）
+    o.fillStyle = '#ff5566';
+    o.fillRect(10, 1, 4, 2);
+    o.fillStyle = '#ffeebb';
+    o.fillRect(11, 1, 1, 1);
   }
   return off;
 }
@@ -2292,10 +2295,10 @@ function makeShareCanvas(data){
   x.fillStyle = '#ffd24a';
   x.font = 'bold 44px "DotGothic16", monospace';
   x.textAlign = 'center';
-  x.fillText('交通整備のおっさん', SZ/2, 84);
+  x.fillText('トラフィックおじさん', SZ/2, 84);
   x.fillStyle = '#aaa';
   x.font = '20px "DotGothic16", monospace';
-  x.fillText('Traffic Officer Ojisan', SZ/2, 112);
+  x.fillText('Traffic Ojisan', SZ/2, 112);
   // SCORE ラベル
   x.fillStyle = '#fff';
   x.font = '24px "DotGothic16", monospace';
@@ -2354,18 +2357,18 @@ async function shareScore(){
   if(!data) return;
   const can = state._lastShareCanvas || makeShareCanvas(data);
   const text = data.isNewBest
-    ? `交通整備のおっさんでハイスコアこうしん！スコア ${data.score}（Lv.${data.level} / 最大コンボ ${data.maxCombo}）`
-    : `交通整備のおっさんでスコア ${data.score}！ Lv.${data.level} まで生き残った（最大コンボ ${data.maxCombo}）`;
+    ? `トラフィックおじさんでハイスコアこうしん！スコア ${data.score}（Lv.${data.level} / 最大コンボ ${data.maxCombo}）`
+    : `トラフィックおじさんでスコア ${data.score}！ Lv.${data.level} まで生き残った（最大コンボ ${data.maxCombo}）`;
   // Blob 取得
   const blob = await new Promise(res => can.toBlob(res, 'image/png'));
   const file = blob ? new File([blob], 'traffic-ojisan.png', {type:'image/png'}) : null;
   try{
     if(file && navigator.canShare && navigator.canShare({files:[file]})){
-      await navigator.share({files:[file], text, url: SHARE_URL, title: '交通整備のおっさん'});
+      await navigator.share({files:[file], text, url: SHARE_URL, title: 'トラフィックおじさん'});
       return;
     }
     if(navigator.share){
-      await navigator.share({text, url: SHARE_URL, title: '交通整備のおっさん'});
+      await navigator.share({text, url: SHARE_URL, title: 'トラフィックおじさん'});
       return;
     }
   }catch(e){

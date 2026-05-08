@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<title>OGP画像ジェネレータ - 交通整備のおっさん</title>
+<title>OGP画像ジェネレータ - トラフィックおじさん</title>
 <style>
   body{font-family:system-ui;background:#1a1a26;color:#fff;margin:0;padding:20px;text-align:center;}
   h1{color:#ffd24a;}
@@ -52,9 +52,11 @@ function bakeCarSprite(type){
     o.fillStyle = '#000'; o.fillRect(10, 8, 1, 4); o.fillRect(13, 8, 1, 4); o.fillRect(11, 9, 2, 1);
     o.fillStyle = '#ffeb70'; o.fillRect(11, 8, 1, 1); o.fillRect(12, 11, 1, 1);
   } else if(type === 'purple'){
-    o.fillStyle = '#cc3344'; o.fillRect(11, 8, 2, 3); o.fillRect(10, 9, 4, 1);
-    o.fillStyle = '#ff5577'; o.fillRect(8, 1, 2, 2);
-    o.fillStyle = '#5577ff'; o.fillRect(14, 1, 2, 2);
+    o.fillStyle = '#dd2233';
+    o.fillRect(11, 4, 2, 8);
+    o.fillRect(8, 8, 8, 2);
+    o.fillStyle = '#ff5566'; o.fillRect(10, 1, 4, 2);
+    o.fillStyle = '#ffeebb'; o.fillRect(11, 1, 1, 1);
   }
   return off;
 }
@@ -96,10 +98,10 @@ function render(){
   ctx.textAlign = 'center';
   ctx.fillStyle = '#ffd24a';
   ctx.font = 'bold 96px system-ui, sans-serif';
-  ctx.fillText('交通整備のおっさん', W/2, 150);
+  ctx.fillText('トラフィックおじさん', W/2, 150);
   ctx.fillStyle = '#aaa';
   ctx.font = '32px system-ui, sans-serif';
-  ctx.fillText('Traffic Officer Ojisan', W/2, 195);
+  ctx.fillText('Traffic Ojisan', W/2, 195);
 
   // サブコピー
   ctx.fillStyle = '#fff';
