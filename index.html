@@ -153,11 +153,26 @@
                    border-radius:0;padding:10px 12px;display:flex;gap:12px;align-items:flex-start;}
   #home .uncleCard.active{border-color:#ffd24a;background:rgba(255,210,74,.16);
                           box-shadow:4px 4px 0 rgba(0,0,0,.5);}
-  #home .uncleCard .badge{flex-shrink:0;width:48px;height:48px;border-radius:0;
+  #home .uncleCard .badge{flex-shrink:0;width:64px;height:64px;border-radius:0;
                           border:3px solid #1a1a26;
                           display:flex;align-items:center;justify-content:center;
-                          font-size:22px;font-weight:bold;color:#fff;
-                          font-family:inherit;letter-spacing:0;}
+                          font-size:26px;font-weight:bold;color:#fff;
+                          font-family:inherit;letter-spacing:0;
+                          overflow:hidden;}
+  #home .uncleCard .badge img{width:100%;height:100%;object-fit:cover;display:block;
+                              image-rendering:pixelated;}
+  /* メインタブの「いまのおじさん」表示 */
+  #home .currentUncle{width:100%;max-width:320px;display:flex;align-items:center;gap:10px;
+                       background:rgba(255,210,74,.12);border:2px solid rgba(255,210,74,.55);
+                       padding:8px 10px;margin:6px 0 4px;}
+  #home .currentUncle .portrait{flex-shrink:0;width:56px;height:56px;
+                                 border:3px solid #1a1a26;overflow:hidden;}
+  #home .currentUncle .portrait img{width:100%;height:100%;object-fit:cover;
+                                     image-rendering:pixelated;}
+  #home .currentUncle .info{flex:1;min-width:0;}
+  #home .currentUncle .label{font-size:10px;opacity:.65;letter-spacing:.2em;}
+  #home .currentUncle .name{font-weight:bold;font-size:14px;color:#ffd24a;}
+  #home .currentUncle .flavor{font-size:11px;opacity:.85;margin-top:2px;}
   #home .uncleCard .info{flex:1;min-width:0;}
   #home .uncleCard .name{font-weight:bold;font-size:14px;color:#fff;}
   #home .uncleCard .flavor{font-size:11px;opacity:.8;margin-top:2px;line-height:1.5;}
@@ -374,6 +389,7 @@
   </div>
   <!-- ホームタブ -->
   <div class="tabContent" data-tab="main">
+    <div class="currentUncle" id="currentUncle"></div>
     <div class="useTicket hidden" id="useTicketBox">
       <label>
         <input type="checkbox" id="useTicketChk">
@@ -561,18 +577,21 @@ const UNCLES = [
   {
     id:'rookie', name:'新人 ぴよきち', flavor:'やる気は いっちょまえ。',
     badgeBg:'#88dd88', badgeBorder:'#3a7a3a', badgeText:'新',
+    img:'新人.png',
     perks:{ startHorn: 1 },
     cheers:['よっしゃ！','いけ！','どんとこい！','ナイス！'],
   },
   {
     id:'veteran', name:'ベテラン あつし', flavor:'たんたんと さばく。',
     badgeBg:'#ffaa66', badgeBorder:'#a05010', badgeText:'熟',
+    img:'ベテラン.png',
     perks:{},
     cheers:['ふむ。','よし。','つぎ。','まだまだ。'],
   },
   {
     id:'master', name:'名人 ぎんじろう', flavor:'たっかんの きょうち。',
     badgeBg:'#aa66ff', badgeBorder:'#4a2080', badgeText:'名',
+    img:'名人.png',
     perks:{},
     cheers:['みごと。','うむ。','よかろう。','ふっ。'],
   },
@@ -860,6 +879,26 @@ function rewardLabel(r){
   return s;
 }
 
+function uncleBadgeContent(u){
+  return u.img
+    ? `<img src="${encodeURI(u.img)}" alt="${u.badgeText}" loading="lazy">`
+    : u.badgeText;
+}
+
+// 「いまのおじさん」をホームタブに表示
+function renderCurrentUncle(){
+  const el = document.getElementById('currentUncle');
+  if(!el) return;
+  const u = uncleById(save.uncleId);
+  el.innerHTML = `
+    <div class="portrait" style="background:${u.badgeBg};">${uncleBadgeContent(u)}</div>
+    <div class="info">
+      <div class="label">いま の おじさん</div>
+      <div class="name">${u.name}</div>
+      <div class="flavor">${u.flavor}</div>
+    </div>`;
+}
+
 // おじさんタブの描画（雇用済みのみ表示・現在選択中をハイライト）
 function renderUncleTab(){
   const list = document.getElementById('uncleList');
@@ -873,7 +912,7 @@ function renderUncleTab(){
       ? `<div class="activeLabel">▶ せんたく中</div>`
       : `<button class="useBtn" data-uncle="${u.id}">えらぶ</button>`;
     return `<div class="uncleCard ${isActive?'active':''}">
-      <div class="badge" style="background:${u.badgeBg};border-color:${u.badgeBorder};">${u.badgeText}</div>
+      <div class="badge" style="background:${u.badgeBg};border-color:${u.badgeBorder};">${uncleBadgeContent(u)}</div>
       <div class="info">
         <div class="name">${u.name}</div>
         <div class="flavor">${u.flavor}</div>
@@ -894,6 +933,7 @@ function renderUncleTab(){
       save.uncleId = btn.dataset.uncle;
       SAVE.save(save);
       renderUncleTab();
+      renderCurrentUncle();
     });
   });
 }
@@ -939,8 +979,11 @@ function renderHireList(){
       if(card){
         card.style.borderColor = '#ffd24a';
         card.style.background = 'rgba(255,210,74,.18)';
+        const portrait = newGuy.img
+          ? `<img src="${encodeURI(newGuy.img)}" alt="${newGuy.badgeText}" style="width:100%;height:100%;object-fit:cover;image-rendering:pixelated;">`
+          : newGuy.badgeText;
         card.innerHTML = `<div class="row">
-          <div class="icon" style="background:${newGuy.badgeBg};border-color:${newGuy.badgeBorder};color:#fff;font-size:22px;font-weight:bold;">${newGuy.badgeText}</div>
+          <div class="icon" style="background:${newGuy.badgeBg};border-color:${newGuy.badgeBorder};color:#fff;font-size:22px;font-weight:bold;overflow:hidden;">${portrait}</div>
           <div class="info">
             <div class="name">やとった！</div>
             <div class="desc"><b>${newGuy.name}</b><br>${newGuy.flavor}</div>
@@ -1028,6 +1071,7 @@ function refreshHome(){
   // ミッション
   renderMissions();
   // おじさん・求人
+  renderCurrentUncle();
   renderUncleTab();
   renderHireList();
   // 履歴
