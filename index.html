@@ -1342,7 +1342,7 @@ class Bomb{
       // 警告点滅：車型の白シルエットを薄く重ねる（元の色が透けて見える）
       const whiteMask = CAR_SPRITES_WHITE[this.type] || CAR_SPRITES_WHITE.black;
       ctx.save();
-      ctx.globalAlpha = fast ? 0.40 : 0.25;
+      ctx.globalAlpha = fast ? 0.55 : 0.38;
       ctx.drawImage(whiteMask, -sw/2, -sh/2, sw, sh);
       ctx.restore();
     }
