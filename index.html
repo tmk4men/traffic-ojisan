@@ -961,6 +961,22 @@ function bakeCarSprite(type){
   CAR_SPRITES[t] = bakeCarSprite(t);
 });
 
+// 車のシルエット型に切り抜いた白マスク（点滅時に上重ねする用）
+const CAR_SPRITES_WHITE = {};
+function bakeWhiteSilhouette(sprite){
+  const off = document.createElement('canvas');
+  off.width = sprite.width; off.height = sprite.height;
+  const o = off.getContext('2d');
+  o.drawImage(sprite, 0, 0);
+  o.globalCompositeOperation = 'source-in';
+  o.fillStyle = '#ffffff';
+  o.fillRect(0, 0, off.width, off.height);
+  return off;
+}
+Object.keys(CAR_SPRITES).forEach(t => {
+  CAR_SPRITES_WHITE[t] = bakeWhiteSilhouette(CAR_SPRITES[t]);
+});
+
 // 背景画像（朝・夜の2枚をレベルでクロスフェード）
 const bgImg = new Image();
 let bgImgReady = false;
@@ -1321,17 +1337,14 @@ class Bomb{
     const sh = CAR_SPRITE_H * SCALE;
     const prevSmooth = ctx.imageSmoothingEnabled;
     ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(sprite, -sw/2, -sh/2, sw, sh);
     if(blinkOn){
-      // 警告点滅：白を半透明でかぶせる（元の色が透けて見える）
-      ctx.drawImage(sprite, -sw/2, -sh/2, sw, sh);
+      // 警告点滅：車型の白シルエットを薄く重ねる（元の色が透けて見える）
+      const whiteMask = CAR_SPRITES_WHITE[this.type] || CAR_SPRITES_WHITE.black;
       ctx.save();
-      ctx.globalCompositeOperation = 'source-atop';
-      // 末期はやや強く（fast）、まだ余裕があれば薄め
-      ctx.fillStyle = fast ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.40)';
-      ctx.fillRect(-sw/2, -sh/2, sw, sh);
+      ctx.globalAlpha = fast ? 0.40 : 0.25;
+      ctx.drawImage(whiteMask, -sw/2, -sh/2, sw, sh);
       ctx.restore();
-    } else {
-      ctx.drawImage(sprite, -sw/2, -sh/2, sw, sh);
     }
     ctx.imageSmoothingEnabled = prevSmooth;
 
