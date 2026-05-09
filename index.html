@@ -386,7 +386,7 @@
       <label>
         <input type="checkbox" id="useShieldChk">
         <svg class="ic"><use href="#ic-shield"/></svg>
-        シールドを つかう
+        エアバッグを つかう
         <span class="small">（もちもの <span id="shieldCount">0</span> こ）</span>
       </label>
     </div>
@@ -435,7 +435,7 @@
         <div class="row">
           <div class="icon"><svg class="ic ic-lg"><use href="#ic-shield"/></svg></div>
           <div class="info">
-            <div class="name">シールド</div>
+            <div class="name">エアバッグ</div>
             <div class="desc">1ゲームちゅう さいしょの ついとつを 1かい ふせぐ</div>
             <div class="own">もちもの: <span class="ownCount">0</span> こ</div>
             <div class="lockNote hidden">🔒 ベスト 350てん こえると 解禁</div>
@@ -484,7 +484,7 @@
     <h3>どうぐ</h3>
     <p>・クラクション：場の車を いっせいに 通過させる（ショップで買える）</p>
     <p>・スロウ：10びょうかん ぜんたいが 0.7ばいそく になる</p>
-    <p>・シールド：1ゲームちゅう さいしょの ついとつを 1かい ふせぐ（ベスト350こえると 解禁）</p>
+    <p>・エアバッグ：1ゲームちゅう さいしょの ついとつを 1かい ふせぐ（ベスト350こえると 解禁）</p>
 
     <button class="closeBtn" id="howtoClose">とじる</button>
   </div>
@@ -2710,7 +2710,7 @@ function endGame(){
     state.bombs.forEach(b => { if(b._exploded) b._dead = true; });
     state.angryFaces = [];
     state.combo = 0;
-    state.scoreFloaters.push({x: W/2, y: H/2 - 20, val: 'シールド発動！', mul: 5, life: 1500, max: 1500});
+    state.scoreFloaters.push({x: W/2, y: H/2 - 20, val: 'エアバッグ発動！', mul: 5, life: 1500, max: 1500, noPrefix: true});
     sfx.daily();
     return;
   }
