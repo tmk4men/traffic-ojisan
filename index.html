@@ -577,7 +577,7 @@ const UNCLES = [
     cheers:['みごと。','うむ。','よかろう。','ふっ。'],
   },
 ];
-const HIRE_COST = 2000; // 求人ガチャ価格（ランダムで未雇用おじさんが1人）
+const HIRE_COST = 2500; // 求人ガチャ価格（ランダムで未雇用おじさんが1人）
 function uncleById(id){ return UNCLES.find(u=>u.id===id) || UNCLES[0]; }
 
 const SAVE = {
@@ -1502,7 +1502,7 @@ class Bomb{
       // 警告点滅：車型の白シルエットを薄く重ねる（元の色が透けて見える）
       const whiteMask = CAR_SPRITES_WHITE[this.type] || CAR_SPRITES_WHITE.black;
       ctx.save();
-      ctx.globalAlpha = fast ? 0.55 : 0.38;
+      ctx.globalAlpha = fast ? 0.85 : 0.62;
       ctx.drawImage(whiteMask, -sw/2, -sh/2, sw, sh);
       ctx.restore();
     }
