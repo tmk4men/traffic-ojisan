@@ -147,6 +147,27 @@
                     border:2px solid rgba(255,255,255,.15);border-radius:0;padding:8px 12px;}
   #home .history li{padding:3px 0;display:flex;justify-content:space-between;}
   #home .history li.empty{justify-content:center;opacity:.4;}
+  /* おじさん タブ */
+  #home .uncleList{width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px;margin:8px 0;}
+  #home .uncleCard{background:rgba(255,255,255,.06);border:2px solid rgba(255,210,74,.4);
+                   border-radius:0;padding:10px 12px;display:flex;gap:12px;align-items:flex-start;}
+  #home .uncleCard.active{border-color:#ffd24a;background:rgba(255,210,74,.16);
+                          box-shadow:4px 4px 0 rgba(0,0,0,.5);}
+  #home .uncleCard .badge{flex-shrink:0;width:48px;height:48px;border-radius:0;
+                          border:3px solid #1a1a26;
+                          display:flex;align-items:center;justify-content:center;
+                          font-size:22px;font-weight:bold;color:#fff;
+                          font-family:inherit;letter-spacing:0;}
+  #home .uncleCard .info{flex:1;min-width:0;}
+  #home .uncleCard .name{font-weight:bold;font-size:14px;color:#fff;}
+  #home .uncleCard .flavor{font-size:11px;opacity:.8;margin-top:2px;line-height:1.5;}
+  #home .uncleCard .perk{font-size:11px;color:#ffd24a;margin-top:3px;}
+  #home .uncleCard button.useBtn{margin-top:8px;padding:6px 14px;border:2px solid #a06c10;
+                                  background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:12px;
+                                  box-shadow:0 3px 0 #a06c10;}
+  #home .uncleCard button.useBtn:active{transform:translateY(1px);box-shadow:0 1px 0 #a06c10;}
+  #home .uncleCard .activeLabel{font-size:11px;color:#ffd24a;font-weight:bold;
+                                 letter-spacing:.1em;margin-top:8px;}
   /* デイリーログイン */
   #daily{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
          background:rgba(0,0,0,.78);z-index:20;}
@@ -348,6 +369,7 @@
   <!-- タブナビ -->
   <div class="tabs">
     <button class="tab active" data-tab="main">ホーム</button>
+    <button class="tab" data-tab="uncle">おじさん</button>
     <button class="tab" data-tab="shop">ショップ</button>
   </div>
   <!-- ホームタブ -->
@@ -378,6 +400,11 @@
       <h3>さいきんのスコア</h3>
       <ol id="historyList"><li class="empty">まだ プレイ なし</li></ol>
     </div>
+  </div>
+  <!-- おじさんタブ -->
+  <div class="tabContent hidden" data-tab="uncle">
+    <p class="small" style="margin:6px 0 4px;opacity:.8;">じゆうに えらべる おじさん。<br>セイノウ さは ありません（しんじん だけ クラクション+1で スタート）</p>
+    <div class="uncleList" id="uncleList"></div>
   </div>
   <!-- ショップタブ -->
   <div class="tabContent hidden" data-tab="shop">
@@ -416,6 +443,9 @@
         </div>
         <button class="buyBtn">200円 で 1こ かう</button>
       </div>
+      <h3 style="margin:14px 0 6px;font-size:13px;text-align:center;opacity:.8;letter-spacing:.2em;color:#88ddff;">きゅうじん</h3>
+      <p class="small" style="text-align:center;opacity:.7;margin:0 0 8px;">あたらしい おじさんを やとう（かいきり・1かいだけ）</p>
+      <div id="hireList"></div>
     </div>
   </div>
 </div>
@@ -469,7 +499,7 @@
     <h3>こうかおん</h3>
     <p class="small">Web Audio API による合成（オリジナル）</p>
     <h3>制作</h3>
-    <p class="small">トラフィックおじさん 開発チーム</p>
+    <p class="small"><a href="https://www.threads.net/@ktomo_dev" target="_blank" rel="noopener" style="color:#88ddff;text-decoration:underline;">@ktomo_dev</a>（Threads）</p>
     <button class="closeBtn" id="creditClose">とじる</button>
   </div>
 </div>
@@ -526,17 +556,49 @@ const SHIELD_UNLOCK_BEST = 350;  // ベスト350てん超えで解禁
     if(v !== null) localStorage.setItem('traffic_' + k, v);
   });
 })();
+// おじさんカタログ（新人だけ初期パーク、他は個性のみ。ベテラン以降はショップ「求人」で雇用）
+const UNCLES = [
+  {
+    id:'rookie', name:'新人 ぴよきち', flavor:'やる気は いっちょまえ。',
+    badgeBg:'#88dd88', badgeBorder:'#3a7a3a', badgeText:'新',
+    perks:{ startHorn: 1 },
+    cheers:['よっしゃ！','いけ！','どんとこい！','ナイス！'],
+  },
+  {
+    id:'veteran', name:'ベテラン あつし', flavor:'たんたんと さばく。',
+    badgeBg:'#ffaa66', badgeBorder:'#a05010', badgeText:'熟',
+    perks:{},
+    cheers:['ふむ。','よし。','つぎ。','まだまだ。'],
+  },
+  {
+    id:'master', name:'名人 ぎんじろう', flavor:'たっかんの きょうち。',
+    badgeBg:'#aa66ff', badgeBorder:'#4a2080', badgeText:'名',
+    perks:{},
+    cheers:['みごと。','うむ。','よかろう。','ふっ。'],
+  },
+];
+const HIRE_COST = 2000; // 求人ガチャ価格（ランダムで未雇用おじさんが1人）
+function uncleById(id){ return UNCLES.find(u=>u.id===id) || UNCLES[0]; }
+
 const SAVE = {
   load(){
     const owned = JSON.parse(localStorage.getItem('traffic_owned') || '{"zenmetsu":1}');
     if(typeof owned.coinDouble !== 'number') owned.coinDouble = 0;
     if(typeof owned.shield !== 'number') owned.shield = 0;
+    let uncleId = localStorage.getItem('traffic_uncle') || 'rookie';
+    if(!UNCLES.some(u=>u.id===uncleId)) uncleId = 'rookie';
+    let unlockedUncles = JSON.parse(localStorage.getItem('traffic_uncles_unlocked') || '["rookie"]');
+    if(!Array.isArray(unlockedUncles) || unlockedUncles.length === 0) unlockedUncles = ['rookie'];
+    if(!unlockedUncles.includes('rookie')) unlockedUncles.unshift('rookie');
+    if(!unlockedUncles.includes(uncleId)) unlockedUncles.push(uncleId);
     return {
       best: +localStorage.getItem('traffic_best') || 0,
       coins: +localStorage.getItem('traffic_coins') || 0,
       owned,
       history: JSON.parse(localStorage.getItem('traffic_history') || '[]'),
       daily: JSON.parse(localStorage.getItem('traffic_daily') || 'null'),
+      uncleId,
+      unlockedUncles,
     };
   },
   save(s){
@@ -545,6 +607,8 @@ const SAVE = {
     localStorage.setItem('traffic_owned', JSON.stringify(s.owned));
     localStorage.setItem('traffic_history', JSON.stringify(s.history));
     if(s.daily) localStorage.setItem('traffic_daily', JSON.stringify(s.daily));
+    if(s.uncleId) localStorage.setItem('traffic_uncle', s.uncleId);
+    if(s.unlockedUncles) localStorage.setItem('traffic_uncles_unlocked', JSON.stringify(s.unlockedUncles));
   },
 };
 const save = SAVE.load();
@@ -796,6 +860,99 @@ function rewardLabel(r){
   return s;
 }
 
+// おじさんタブの描画（雇用済みのみ表示・現在選択中をハイライト）
+function renderUncleTab(){
+  const list = document.getElementById('uncleList');
+  if(!list) return;
+  const unlocked = save.unlockedUncles || ['rookie'];
+  const cards = UNCLES.filter(u => unlocked.includes(u.id)).map(u => {
+    const isActive = save.uncleId === u.id;
+    const perkLine = u.perks.startHorn
+      ? `<div class="perk">クラクション +${u.perks.startHorn} で スタート</div>` : '';
+    const action = isActive
+      ? `<div class="activeLabel">▶ せんたく中</div>`
+      : `<button class="useBtn" data-uncle="${u.id}">えらぶ</button>`;
+    return `<div class="uncleCard ${isActive?'active':''}">
+      <div class="badge" style="background:${u.badgeBg};border-color:${u.badgeBorder};">${u.badgeText}</div>
+      <div class="info">
+        <div class="name">${u.name}</div>
+        <div class="flavor">${u.flavor}</div>
+        ${perkLine}
+        ${action}
+      </div>
+    </div>`;
+  });
+  // 未雇用のヒント
+  const unhired = UNCLES.filter(u => !unlocked.includes(u.id)).length;
+  if(unhired > 0){
+    cards.push(`<p class="small" style="text-align:center;opacity:.6;margin:6px 0;">→ ショップの「きゅうじん」で あと ${unhired} 人 やとえる</p>`);
+  }
+  list.innerHTML = cards.join('');
+  list.querySelectorAll('.useBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sfx.tap();
+      save.uncleId = btn.dataset.uncle;
+      SAVE.save(save);
+      renderUncleTab();
+    });
+  });
+}
+
+// 求人ガチャ（ショップタブ内）の描画
+function renderHireList(){
+  const list = document.getElementById('hireList');
+  if(!list) return;
+  const unlocked = save.unlockedUncles || ['rookie'];
+  const remaining = UNCLES.filter(u => !unlocked.includes(u.id));
+  if(remaining.length === 0){
+    list.innerHTML = `<p class="small" style="text-align:center;opacity:.6;">ぜんいん やとった！おじさんタブで えらべる</p>`;
+    return;
+  }
+  const can = save.coins >= HIRE_COST;
+  const btn = can
+    ? `<button class="buyBtn" id="hireGachaBtn">${HIRE_COST} <svg class="ic"><use href="#ic-coin"/></svg> で やとう（ランダム）</button>`
+    : `<button class="buyBtn" disabled>コインが ${HIRE_COST - save.coins} こ たりない</button>`;
+  list.innerHTML = `<div class="shopItem" id="hireGachaCard">
+    <div class="row">
+      <div class="icon" style="background:#3a3a48;color:#ffd24a;font-size:26px;font-weight:bold;">？</div>
+      <div class="info">
+        <div class="name">？？？</div>
+        <div class="desc">あたらしい おじさんが ランダムで くる<br>のこり ${remaining.length} 人</div>
+      </div>
+    </div>
+    ${btn}
+  </div>`;
+  const gachaBtn = document.getElementById('hireGachaBtn');
+  if(gachaBtn){
+    gachaBtn.addEventListener('click', () => {
+      if(save.coins < HIRE_COST) return;
+      const pool = UNCLES.filter(u => !(save.unlockedUncles||['rookie']).includes(u.id));
+      if(pool.length === 0) return;
+      const newGuy = pool[Math.floor(Math.random()*pool.length)];
+      save.coins -= HIRE_COST;
+      save.unlockedUncles = [...(save.unlockedUncles||['rookie']), newGuy.id];
+      save.uncleId = newGuy.id;  // 雇ったら自動で選択
+      SAVE.save(save);
+      sfx.daily();
+      // 当選演出（カードを差し替えて 2.2秒後 refreshHome）
+      const card = document.getElementById('hireGachaCard');
+      if(card){
+        card.style.borderColor = '#ffd24a';
+        card.style.background = 'rgba(255,210,74,.18)';
+        card.innerHTML = `<div class="row">
+          <div class="icon" style="background:${newGuy.badgeBg};border-color:${newGuy.badgeBorder};color:#fff;font-size:22px;font-weight:bold;">${newGuy.badgeText}</div>
+          <div class="info">
+            <div class="name">やとった！</div>
+            <div class="desc"><b>${newGuy.name}</b><br>${newGuy.flavor}</div>
+          </div>
+        </div>`;
+      }
+      coinsValEl.textContent = save.coins;
+      setTimeout(() => refreshHome(), 2200);
+    });
+  }
+}
+
 function renderMissions(){
   const ul = document.getElementById('missionList');
   if(!save.daily){ ul.innerHTML = ''; return; }
@@ -870,6 +1027,9 @@ function refreshHome(){
   }
   // ミッション
   renderMissions();
+  // おじさん・求人
+  renderUncleTab();
+  renderHireList();
   // 履歴
   if(save.history.length === 0){
     historyListEl.innerHTML = '<li class="empty">まだ プレイ なし</li>';
@@ -1644,6 +1804,12 @@ function placeBomb(bomb, zoneKey){
     const prevTierMul = comboMul(state.combo - 1);
     if(mul > prevTierMul){
       sfx.combo(mul);
+      // おじさんのかけ声（個性差）
+      const u = state.activeUncle;
+      if(u && u.cheers && u.cheers.length){
+        const cry = u.cheers[Math.floor(Math.random()*u.cheers.length)];
+        state.scoreFloaters.push({x: bomb.x, y: bomb.y - 28, val: cry, mul: mul, life: 1100, max: 1100, noPrefix: true});
+      }
     } else {
       sfx.place(state.combo);
     }
@@ -2227,10 +2393,28 @@ function drawScoreFloaters(){
     ctx.textAlign = 'center';
     ctx.lineWidth = 3;
     ctx.strokeStyle = '#000';
-    ctx.strokeText(`+${f.val}`, f.x, f.y);
-    ctx.fillText(`+${f.val}`, f.x, f.y);
+    const txt = f.noPrefix ? String(f.val) : `+${f.val}`;
+    ctx.strokeText(txt, f.x, f.y);
+    ctx.fillText(txt, f.x, f.y);
   });
   ctx.globalAlpha = 1;
+}
+
+// 夜の視界ビネット（レベル6+ で徐々に強くなる。最大でも端だけ薄く暗くする）
+function drawNightVignette(){
+  const t = Math.max(0, Math.min(1, (state.level - 5) / 10));
+  if(t <= 0) return;
+  ctx.save();
+  const cx = W*0.5, cy = H*0.45;
+  const inner = Math.min(W, H) * 0.30;
+  const outer = Math.max(W, H) * 0.78;
+  const grad = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer);
+  grad.addColorStop(0,    'rgba(0,0,16,0)');
+  grad.addColorStop(0.55, 'rgba(0,0,18,'+ (0.22*t) +')');
+  grad.addColorStop(1,    'rgba(0,0,8,'+ (0.55*t) +')');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
 }
 
 function drawSlowOverlay(){
@@ -2445,6 +2629,7 @@ function loop(t){
   drawParticles();
   drawAngryFaces();   // 顔アップは粒子より前面
   drawScoreFloaters();
+  drawNightVignette();
   drawHud();
   drawCombo();
   drawBonus();
@@ -2476,7 +2661,11 @@ function startGame(){
   state.running = true;
   state.gameOver = false;
   state._endGameScheduled = false;
-  state.itemCount = save.owned.zenmetsu || 0;
+  // おじさんのパーク適用（クラクション+1で開始 等）
+  const activeUncle = uncleById(save.uncleId);
+  state.activeUncle = activeUncle;
+  state.itemPerkBonus = activeUncle.perks.startHorn || 0;
+  state.itemCount = (save.owned.zenmetsu || 0) + state.itemPerkBonus;
   state.combo = 0;
   state.comboTimer = 0;
   state.scoreFloaters = [];
@@ -2533,8 +2722,8 @@ function endGame(){
   const fine = state.runStats.fineApplied || 0;
   const earned = baseEarned - fine;
   save.coins = Math.max(0, save.coins + earned);
-  // 持ち物：使い切ったぶんを永続化
-  save.owned.zenmetsu = state.itemCount;
+  // 持ち物：使い切ったぶんを永続化（パーク分は持ち越さない）
+  save.owned.zenmetsu = Math.max(0, state.itemCount - (state.itemPerkBonus || 0));
   // ベスト
   let isNewBest = false;
   if(state.score > save.best){
