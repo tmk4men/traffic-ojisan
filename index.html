@@ -1708,7 +1708,7 @@ function makeBomb(){
   const b = new Bomb(t, p.side, p.pos);
   // 気まぐれダッシュ（黄色）：Lv3+ から発動。レベルが上がるほど確率↑（ボーナス中はOFF）
   // Lv3 → 12% / Lv10 → 26% / Lv20 → 46% / 上限 50%
-  if(!state.bonus.active && t !== 'brown' && t !== 'gold' && t !== 'purple' && state.level >= 3 && Math.random() < Math.min(0.40, 0.04 + state.level*0.013)){
+  if(!state.bonus.active && t !== 'brown' && t !== 'gold' && t !== 'purple' && state.level >= 3 && Math.random() < Math.min(0.60, 0.10 + state.level*0.025)){
     b.dashy = true;
     b.dashCooldown = 2200 + Math.random()*2500;
   }
