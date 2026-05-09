@@ -56,17 +56,21 @@
            display:flex;flex-direction:column;gap:2px;min-width:160px;
            box-shadow:4px 4px 0 rgba(0,0,0,.5);}
   #menuPop .mItem{background:transparent;color:#fff;border:none;padding:12px 14px;
-                  text-align:left;cursor:pointer;font-size:14px;border-radius:0;}
+                  text-align:left;cursor:pointer;font-size:14px;border-radius:0;
+                  display:flex;justify-content:space-between;align-items:center;gap:10px;}
   #menuPop .mItem:active{background:rgba(255,210,74,.18);}
-  /* あそびかたモーダル */
-  #howto{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:30;
+  #menuPop .mItem .toggleVal{font-weight:bold;font-size:12px;letter-spacing:.1em;}
+  #menuPop .mItem .toggleVal.on{color:#88dd88;}
+  #menuPop .mItem .toggleVal.off{color:#888;}
+  /* あそびかた・クレジット モーダル */
+  #howto, #credit{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:30;
          display:flex;align-items:center;justify-content:center;padding:18px;}
-  #howto .card{background:#222230;border:3px solid #ffd24a;border-radius:0;
+  #howto .card, #credit .card{background:#222230;border:3px solid #ffd24a;border-radius:0;
                padding:18px 20px;max-width:340px;width:100%;max-height:84vh;
                overflow-y:auto;color:#fff;box-shadow:6px 6px 0 rgba(0,0,0,.5);}
-  #howto h2{margin:0 0 12px;color:#ffd24a;text-align:center;font-size:20px;}
-  #howto h3{margin:14px 0 6px;color:#ffd24a;font-size:14px;border-bottom:1px solid rgba(255,210,74,.3);padding-bottom:4px;}
-  #howto p{font-size:13px;line-height:1.7;margin:4px 0;}
+  #howto h2, #credit h2{margin:0 0 12px;color:#ffd24a;text-align:center;font-size:20px;}
+  #howto h3, #credit h3{margin:14px 0 6px;color:#ffd24a;font-size:14px;border-bottom:1px solid rgba(255,210,74,.3);padding-bottom:4px;}
+  #howto p, #credit p{font-size:13px;line-height:1.7;margin:4px 0;}
   #howto .row{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:13px;}
   #howto .marker{flex-shrink:0;width:26px;height:26px;border-radius:50%;
                  display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;}
@@ -76,10 +80,10 @@
   #howto .m-yel{background:#caa84a;color:#000;}
   #howto .m-pur{background:#7a3acc;}
   #howto .m-gld{background:#e0a818;color:#000;}
-  #howto .closeBtn{margin-top:14px;width:100%;padding:11px;border:3px solid #a06c10;border-radius:0;
+  #howto .closeBtn, #credit .closeBtn{margin-top:14px;width:100%;padding:11px;border:3px solid #a06c10;border-radius:0;
                    background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:15px;
                    box-shadow:0 4px 0 #a06c10;}
-  #howto .closeBtn:active{transform:translateY(2px);box-shadow:0 2px 0 #a06c10;}
+  #howto .closeBtn:active, #credit .closeBtn:active{transform:translateY(2px);box-shadow:0 2px 0 #a06c10;}
   #home h1{font-size:26px;margin:6px 0 10px;letter-spacing:.05em;color:#ffd24a;text-shadow:0 2px 0 #000;}
   #home .stats{display:flex;gap:14px;margin:6px 0 10px;font-size:14px;}
   #home .stats .pill{background:rgba(0,0,0,.45);border:2px solid rgba(255,210,74,.5);
@@ -331,7 +335,10 @@
 <div id="home">
   <button id="menuBtn" aria-label="メニュー">≡</button>
   <div id="menuPop" class="hidden">
-    <button class="mItem" data-action="howto">あそびかた</button>
+    <button class="mItem" data-action="howto"><span>あそびかた</span></button>
+    <button class="mItem" data-action="bgm"><span>BGM</span><span class="toggleVal on" id="bgmToggleVal">ON</span></button>
+    <button class="mItem" data-action="sfx"><span>こうかおん</span><span class="toggleVal on" id="sfxToggleVal">ON</span></button>
+    <button class="mItem" data-action="credit"><span>クレジット</span></button>
   </div>
   <h1>トラフィックおじさん</h1>
   <div class="stats">
@@ -449,10 +456,21 @@
     <p>・スロウ：10びょうかん ぜんたいが 0.7ばいそく になる</p>
     <p>・シールド：1ゲームちゅう さいしょの ついとつを 1かい ふせぐ（ベスト350こえると 解禁）</p>
 
-    <h3>クレジット</h3>
-    <p class="small">BGM: <a href="https://otologic.jp/" target="_blank" rel="noopener" style="color:#88ddff;text-decoration:underline;">OtoLogic</a> 様（GB-General-C02）</p>
-
     <button class="closeBtn" id="howtoClose">とじる</button>
+  </div>
+</div>
+
+<!-- クレジットモーダル -->
+<div id="credit" class="hidden">
+  <div class="card">
+    <h2>クレジット</h2>
+    <h3>BGM</h3>
+    <p><a href="https://otologic.jp/" target="_blank" rel="noopener" style="color:#88ddff;text-decoration:underline;">OtoLogic</a> 様（GB-General-C02）</p>
+    <h3>こうかおん</h3>
+    <p class="small">Web Audio API による合成（オリジナル）</p>
+    <h3>制作</h3>
+    <p class="small">トラフィックおじさん 開発チーム</p>
+    <button class="closeBtn" id="creditClose">とじる</button>
   </div>
 </div>
 
@@ -531,6 +549,16 @@ const SAVE = {
 };
 const save = SAVE.load();
 
+// オーディオの ON/OFF 設定（localStorage で永続化）
+const audioPrefs = {
+  bgm: localStorage.getItem('traffic_bgm') !== '0',
+  sfx: localStorage.getItem('traffic_sfx') !== '0',
+};
+function saveAudioPrefs(){
+  localStorage.setItem('traffic_bgm', audioPrefs.bgm ? '1' : '0');
+  localStorage.setItem('traffic_sfx', audioPrefs.sfx ? '1' : '0');
+}
+
 // 効果音（Web Audio で合成、ファイル不要）
 const sfx = {
   ctx: null, master: null, enabled: true,
@@ -544,6 +572,7 @@ const sfx = {
     } catch(e){ this.enabled = false; }
   },
   beep(freq, dur, type='sine', vol=0.2, slide=0){
+    if(!audioPrefs.sfx) return;
     this.init();
     if(!this.enabled || !this.ctx) return;
     const t = this.ctx.currentTime;
@@ -559,6 +588,7 @@ const sfx = {
     o.start(t); o.stop(t + dur + 0.05);
   },
   noiseBurst(dur=0.25, vol=0.35){
+    if(!audioPrefs.sfx) return;
     this.init();
     if(!this.enabled || !this.ctx) return;
     const t = this.ctx.currentTime;
@@ -638,8 +668,15 @@ const sfx = {
 const bgm = new Audio('bgm-stage.mp3');
 bgm.loop = true;
 bgm.volume = 0.35;
-function bgmPlay(){ bgm.play().catch(()=>{}); }
+function bgmPlay(){ if(audioPrefs.bgm) bgm.play().catch(()=>{}); }
 function bgmPause(){ bgm.pause(); }
+// 初回ユーザー操作で BGM スタート（ブラウザのオートプレイ制限対策）
+function tryStartBgmOnce(){
+  if(audioPrefs.bgm && bgm.paused){ bgm.play().catch(()=>{}); }
+}
+['pointerdown','keydown','touchstart'].forEach(ev=>{
+  window.addEventListener(ev, tryStartBgmOnce, {capture:true});
+});
 
 // レイアウト
 const HUD_H = 36;
@@ -848,6 +885,7 @@ function showHome(){
   homeEl.classList.remove('hidden');
   gameoverEl.classList.add('hidden');
   refreshHome();
+  bgmPlay();
 }
 function hideHome(){
   homeEl.classList.add('hidden');
@@ -1091,7 +1129,7 @@ class Bomb{
     this.fuseTime = (type==='brown') ? 7000
                   : (type==='gold')  ? 4500
                   : (type==='purple')? 5500
-                  : Math.max(5000, 9500 - (state.level-1) * 300);
+                  : Math.max(5500, 9500 - (state.level-1) * 200);
     this.fuseLeft = this.fuseTime;
     this.targetX = 0;
     this.targetY = 0;
@@ -1284,11 +1322,12 @@ class Bomb{
     const prevSmooth = ctx.imageSmoothingEnabled;
     ctx.imageSmoothingEnabled = false;
     if(blinkOn){
-      // 警告点滅：白くフラッシュ（同じ形にマスク）
-      ctx.save();
+      // 警告点滅：白を半透明でかぶせる（元の色が透けて見える）
       ctx.drawImage(sprite, -sw/2, -sh/2, sw, sh);
+      ctx.save();
       ctx.globalCompositeOperation = 'source-atop';
-      ctx.fillStyle = '#fff';
+      // 末期はやや強く（fast）、まだ余裕があれば薄め
+      ctx.fillStyle = fast ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.40)';
       ctx.fillRect(-sw/2, -sh/2, sw, sh);
       ctx.restore();
     } else {
@@ -1496,7 +1535,7 @@ function makeBomb(){
   const b = new Bomb(t, p.side, p.pos);
   // 気まぐれダッシュ（黄色）：Lv3+ から発動。レベルが上がるほど確率↑（ボーナス中はOFF）
   // Lv3 → 12% / Lv10 → 26% / Lv20 → 46% / 上限 50%
-  if(!state.bonus.active && t !== 'brown' && t !== 'gold' && t !== 'purple' && state.level >= 3 && Math.random() < Math.min(0.50, 0.06 + state.level*0.020)){
+  if(!state.bonus.active && t !== 'brown' && t !== 'gold' && t !== 'purple' && state.level >= 3 && Math.random() < Math.min(0.40, 0.04 + state.level*0.013)){
     b.dashy = true;
     b.dashCooldown = 2200 + Math.random()*2500;
   }
@@ -1595,10 +1634,10 @@ function placeBomb(bomb, zoneKey){
     } else {
       sfx.place(state.combo);
     }
-    state.spawnInterval = Math.max(480, state.spawnInterval * 0.988);
-    if(Math.floor(state.score/8) > Math.floor(before/8)){
+    state.spawnInterval = Math.max(540, state.spawnInterval * 0.993);
+    if(Math.floor(state.score/12) > Math.floor(before/12)){
       state.level++;
-      state.spawnInterval = Math.max(480, state.spawnInterval - 45);
+      state.spawnInterval = Math.max(540, state.spawnInterval - 28);
       // ボーナスステージ発動（10レベルごと）
       if(state.level % 10 === 0 && !state.bonus.active){
         startBonusStage();
@@ -2475,7 +2514,7 @@ function endGame(){
   }
   state.gameOver = true;
   state.running = false;
-  bgmPause();
+  // ホーム画面でも BGM は流れ続ける（明示的に止めない）
   // 報酬：基本コインはスコア = コイン、罰金があれば差し引き
   const baseEarned = state.score;
   const fine = state.runStats.fineApplied || 0;
@@ -2731,12 +2770,25 @@ function buyShield(){
 
 startBtn.addEventListener('click', () => { sfx.tap(); startGame(); });
 
-// ハンバーガーメニュー＆あそびかた
+// ハンバーガーメニュー＆あそびかた・クレジット・音声トグル
 (()=>{
   const menuBtn = document.getElementById('menuBtn');
   const menuPop = document.getElementById('menuPop');
   const howtoEl = document.getElementById('howto');
   const howtoCloseBtn = document.getElementById('howtoClose');
+  const creditEl = document.getElementById('credit');
+  const creditCloseBtn = document.getElementById('creditClose');
+  const bgmToggleVal = document.getElementById('bgmToggleVal');
+  const sfxToggleVal = document.getElementById('sfxToggleVal');
+  function refreshAudioToggles(){
+    bgmToggleVal.textContent = audioPrefs.bgm ? 'ON' : 'OFF';
+    bgmToggleVal.classList.toggle('on', audioPrefs.bgm);
+    bgmToggleVal.classList.toggle('off', !audioPrefs.bgm);
+    sfxToggleVal.textContent = audioPrefs.sfx ? 'ON' : 'OFF';
+    sfxToggleVal.classList.toggle('on', audioPrefs.sfx);
+    sfxToggleVal.classList.toggle('off', !audioPrefs.sfx);
+  }
+  refreshAudioToggles();
   menuBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
     menuPop.classList.toggle('hidden');
@@ -2750,11 +2802,35 @@ startBtn.addEventListener('click', () => { sfx.tap(); startGame(); });
     menuPop.classList.add('hidden');
     howtoEl.classList.remove('hidden');
   });
+  menuPop.querySelector('[data-action="credit"]').addEventListener('click', ()=>{
+    menuPop.classList.add('hidden');
+    creditEl.classList.remove('hidden');
+  });
+  menuPop.querySelector('[data-action="bgm"]').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    audioPrefs.bgm = !audioPrefs.bgm;
+    saveAudioPrefs();
+    refreshAudioToggles();
+    if(audioPrefs.bgm) bgmPlay(); else bgmPause();
+  });
+  menuPop.querySelector('[data-action="sfx"]').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    audioPrefs.sfx = !audioPrefs.sfx;
+    saveAudioPrefs();
+    refreshAudioToggles();
+    if(audioPrefs.sfx) sfx.tap();
+  });
   howtoCloseBtn.addEventListener('click', ()=>{
     howtoEl.classList.add('hidden');
   });
   howtoEl.addEventListener('click', (e)=>{
     if(e.target === howtoEl) howtoEl.classList.add('hidden');
+  });
+  creditCloseBtn.addEventListener('click', ()=>{
+    creditEl.classList.add('hidden');
+  });
+  creditEl.addEventListener('click', (e)=>{
+    if(e.target === creditEl) creditEl.classList.add('hidden');
   });
 })();
 
