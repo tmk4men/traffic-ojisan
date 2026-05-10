@@ -18,12 +18,12 @@
 <meta name="twitter:description" content="ベテラン整備員になって 上から流れてくる車を レーン別にドラッグで誘導！">
 <meta name="twitter:image" content="https://tmk4men.github.io/traffic-ojisan/ogp.png">
 <!-- PWA -->
-<link rel="manifest" href="manifest.webmanifest?v=4">
+<link rel="manifest" href="manifest.webmanifest?v=5">
 <meta name="theme-color" content="#ffd24a">
-<link rel="icon" href="favicon.ico?v=3" sizes="any">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=3">
-<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png?v=3">
+<link rel="icon" href="favicon.ico?v=4" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=4">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png?v=4">
 <!-- ピクセルフォント -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1151,8 +1151,11 @@ function bakeCarSprite(type){
     o.fillRect(11, 8, 1, 1);
     o.fillRect(12, 11, 1, 1);
   } else if(type === 'purple'){
-    // 救急車：でかい赤十字＋赤サイレン（パトカーと混同しないよう赤一色で）
+    // 救急車：赤十字＋車体側面の赤い太ライン＋赤サイレン
+    // （パトカー＝白×黒帯／救急車＝白×赤帯 で一目で違うように）
     o.fillStyle = '#dd2233';
+    // 車体側面の赤い太ライン（実車ふう。最大の識別ポイント）
+    o.fillRect(1, 10, 22, 1);
     // 縦棒（窓の隙間〜車体下まで貫通）
     o.fillRect(11, 4, 2, 8);
     // 太い横棒
@@ -1756,9 +1759,9 @@ function makeBomb(){
   }
   const b = new Bomb(t, p.side, p.pos);
   // 気まぐれダッシュ（黄色）：Lv3+ から発動。レベルが上がるほど確率↑（ボーナス中はOFF）
-  // Lv3 → 12% / Lv10 → 26% / Lv20 → 46% / 上限 50%
+  // Lv3 → 37% / Lv5 → 45% / Lv10 → 65% / Lv13+ → 上限 75%
   const noDashy = state.activeUncle && state.activeUncle.perks.noDashy;
-  if(!noDashy && !state.bonus.active && t !== 'brown' && t !== 'gold' && t !== 'purple' && state.level >= 3 && Math.random() < Math.min(0.60, 0.10 + state.level*0.025)){
+  if(!noDashy && !state.bonus.active && t !== 'brown' && t !== 'gold' && t !== 'purple' && state.level >= 3 && Math.random() < Math.min(0.75, 0.25 + state.level*0.04)){
     b.dashy = true;
     b.dashCooldown = 2200 + Math.random()*2500;
   }
