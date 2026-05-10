@@ -722,13 +722,34 @@ const sfx = {
   },
   tap(){ this.beep(1100, 0.025, 'square', 0.10); },
   // クラクション「プッ プッ」: loud=true で短間隔リピート可
+  // 5パターンのmp3からランダム再生（同時鳴らし対応のためHTMLAudio複製）
+  _hornSrcs: ['horn-1.mp3','horn-2.mp3','horn-3.mp3','horn-4.mp3','horn-5.mp3'],
+  _hornPool: null,
+  _initHornPool(){
+    if(this._hornPool) return;
+    this._hornPool = this._hornSrcs.map(src => {
+      const a = new Audio(src);
+      a.preload = 'auto';
+      a.volume = 0.55;
+      return a;
+    });
+  },
   honk(loud){
     const now = performance.now();
     const cd = loud ? 700 : 1500;
     if(now - (this._lastHonk||0) < cd) return;
     this._lastHonk = now;
-    this.beep(440, 0.14, 'square', 0.18);
-    setTimeout(()=> this.beep(380, 0.11, 'square', 0.15), 90);
+    this._initHornPool();
+    const base = this._hornPool[Math.floor(Math.random()*this._hornPool.length)];
+    // 同時再生のためにcloneして使い捨て
+    try{
+      const a = base.cloneNode();
+      a.volume = base.volume;
+      a.play().catch(()=>{});
+    }catch(_){
+      base.currentTime = 0;
+      base.play().catch(()=>{});
+    }
   },
   // 追突事故：急ブレーキ→金属衝突→クラクション
   crash(){
@@ -909,7 +930,7 @@ function renderUncleTab(){
     const perkParts = [];
     if(u.perks.startHorn) perkParts.push(`クラクション +${u.perks.startHorn} で スタート`);
     if(u.perks.noDashy)   perkParts.push(`あおり運転が おきない`);
-    if(u.perks.rareUp)    perkParts.push(`金/紫の しゅつげんりつ ×${u.perks.rareUp}`);
+    if(u.perks.rareUp)    perkParts.push(`お金の車・きゅうきゅう車が ×${u.perks.rareUp}ばい でやすい`);
     const perkLine = perkParts.length
       ? `<div class="perk">${perkParts.join('<br>')}</div>` : '';
     const action = isActive
