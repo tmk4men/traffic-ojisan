@@ -722,28 +722,32 @@ const sfx = {
   },
   tap(){ this.beep(1100, 0.025, 'square', 0.10); },
   // クラクション「プッ プッ」: loud=true で短間隔リピート可
-  _hornBase: null,
-  _initHorn(){
-    if(this._hornBase) return;
-    const a = new Audio('horn-1.mp3');
-    a.preload = 'auto';
-    a.volume = 0.55;
-    this._hornBase = a;
+  // 5パターンのmp3からランダム再生（同時鳴らし対応のためHTMLAudio複製）
+  _hornSrcs: ['horn-1.mp3','horn-2.mp3','horn-3.mp3','horn-4.mp3','horn-5.mp3'],
+  _hornPool: null,
+  _initHornPool(){
+    if(this._hornPool) return;
+    this._hornPool = this._hornSrcs.map(src => {
+      const a = new Audio(src);
+      a.preload = 'auto';
+      a.volume = 0.55;
+      return a;
+    });
   },
   honk(loud){
     const now = performance.now();
     const cd = loud ? 700 : 1500;
     if(now - (this._lastHonk||0) < cd) return;
     this._lastHonk = now;
-    this._initHorn();
-    // 同時再生のためにcloneして使い捨て
+    this._initHornPool();
+    const base = this._hornPool[Math.floor(Math.random()*this._hornPool.length)];
     try{
-      const a = this._hornBase.cloneNode();
-      a.volume = this._hornBase.volume;
+      const a = base.cloneNode();
+      a.volume = base.volume;
       a.play().catch(()=>{});
     }catch(_){
-      this._hornBase.currentTime = 0;
-      this._hornBase.play().catch(()=>{});
+      base.currentTime = 0;
+      base.play().catch(()=>{});
     }
   },
   // 追突事故：急ブレーキ→金属衝突→クラクション
