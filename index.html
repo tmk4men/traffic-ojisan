@@ -128,6 +128,12 @@
                     font-size:13px;}
   #home .useTicket label{display:flex;align-items:center;gap:6px;cursor:pointer;}
   #home .useTicket input{transform:scale(1.2);}
+  #home .carryBox{width:100%;max-width:320px;margin:8px 0;background:rgba(136,221,255,.10);
+                  border:2px solid rgba(136,221,255,.6);border-radius:0;padding:8px 12px;font-size:13px;}
+  #home .carryBox .carryTitle{font-size:11px;opacity:.8;letter-spacing:.15em;color:#88ddff;margin-bottom:6px;}
+  #home .carryBox .carryOpt{display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 2px;}
+  #home .carryBox .carryOpt input{transform:scale(1.2);}
+  #home .carryBox .carryOpt .ic{width:16px;height:16px;}
   #home .missions{width:100%;max-width:320px;margin-top:14px;}
   #home .missions h3{margin:6px 0;font-size:13px;text-align:center;opacity:.8;letter-spacing:.2em;color:#88ddff;}
   #home .missions ul{list-style:none;padding:0;margin:0;}
@@ -390,12 +396,21 @@
   <!-- ホームタブ -->
   <div class="tabContent" data-tab="main">
     <div class="currentUncle" id="currentUncle"></div>
-    <div class="useTicket hidden" id="useTicketBox">
-      <label>
-        <input type="checkbox" id="useTicketChk">
+    <div class="carryBox hidden" id="carryBox">
+      <div class="carryTitle">もって いく アイテム（1プレイ 1こ）</div>
+      <label class="carryOpt" data-kind="none">
+        <input type="radio" name="carry" value="none" checked>
+        <span class="carryLabel">もたない</span>
+      </label>
+      <label class="carryOpt hidden" data-kind="horn">
+        <input type="radio" name="carry" value="horn">
+        <svg class="ic"><use href="#ic-burst"/></svg>
+        <span class="carryLabel">クラクション（×<span id="carryHornCount">0</span>）</span>
+      </label>
+      <label class="carryOpt hidden" data-kind="slow">
+        <input type="radio" name="carry" value="slow">
         <svg class="ic"><use href="#ic-x2"/></svg>
-        スロウを つかう
-        <span class="small">（もちもの <span id="ticketCount">0</span> こ）</span>
+        <span class="carryLabel">スロウ（×<span id="carrySlowCount">0</span>）</span>
       </label>
     </div>
     <div class="useTicket hidden" id="useShieldBox" style="background:rgba(255,210,74,.14);border-color:#ffd24a;">
@@ -498,9 +513,10 @@
     <p>・レベルが あがると 投入口が 増えていく（最大 9 こ）</p>
 
     <h3>どうぐ</h3>
-    <p>・クラクション：場の車を いっせいに 通過させる（ショップで買える）</p>
-    <p>・スロウ：10びょうかん ぜんたいが 0.7ばいそく になる</p>
-    <p>・エアバッグ：1ゲームちゅう さいしょの ついとつを 1かい ふせぐ（ベスト350こえると 解禁）</p>
+    <p>・もって いけるのは 1プレイ 1こ だけ。プレイちゅうに 右下を タップで つかえる</p>
+    <p>・クラクション：場の車を いっせいに 通過させる</p>
+    <p>・スロウ：10びょうかん ぜんたいが 0.7ばいそく になる（タップで発動）</p>
+    <p>・エアバッグ：1ゲームちゅう さいしょの ついとつを 1かい じどう で ふせぐ（ベスト350こえると 解禁）</p>
 
     <button class="closeBtn" id="howtoClose">とじる</button>
   </div>
@@ -551,7 +567,15 @@ const buyZenBtnEl = homeEl.querySelector('.shopItem[data-item="zenmetsu"] .buyBt
 const buyTcBtnEl = homeEl.querySelector('.shopItem[data-item="coindouble"] .buyBtn');
 const buyShieldBtnEl = homeEl.querySelector('.shopItem[data-item="shield"] .buyBtn');
 const useShieldChk = document.getElementById('useShieldChk');
-const useTicketChk = document.getElementById('useTicketChk');
+const carryBoxEl = document.getElementById('carryBox');
+function getCarrySelection(){
+  const el = document.querySelector('input[name="carry"]:checked');
+  return el ? el.value : 'none';
+}
+function setCarrySelection(v){
+  const el = document.querySelector('input[name="carry"][value="'+v+'"]');
+  if(el) el.checked = true;
+}
 const historyListEl = document.getElementById('historyList');
 const goScoreEl = document.getElementById('goScore');
 const goCoinsEl = document.getElementById('goCoins');
@@ -767,19 +791,56 @@ const sfx = {
   },
 };
 
-// BGM（OtoLogic GB-General-C02、ループ再生）
-const bgm = new Audio('bgm-stage.mp3');
-bgm.loop = true;
-bgm.volume = 0.35;
-function bgmPlay(){ if(audioPrefs.bgm) bgm.play().catch(()=>{}); }
-function bgmPause(){ bgm.pause(); }
-// 初回ユーザー操作で BGM スタート（ブラウザのオートプレイ制限対策）
-function tryStartBgmOnce(){
-  if(audioPrefs.bgm && bgm.paused){ bgm.play().catch(()=>{}); }
-}
-['pointerdown','keydown','touchstart'].forEach(ev=>{
-  window.addEventListener(ev, tryStartBgmOnce, {capture:true});
+// BGM（OtoLogic GB-General-C02、WebAudio でギャップレスループ）
+const bgmAudio = {
+  ctx: null, buffer: null, source: null, gain: null, loading: null,
+  async init(){
+    if(this.buffer) return true;
+    if(this.loading) return this.loading;
+    this.loading = (async () => {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return false;
+      this.ctx = new AC();
+      this.gain = this.ctx.createGain();
+      this.gain.gain.value = 0.35;
+      this.gain.connect(this.ctx.destination);
+      try{
+        const resp = await fetch('bgm-stage.mp3');
+        const arr = await resp.arrayBuffer();
+        this.buffer = await new Promise((res, rej) => this.ctx.decodeAudioData(arr, res, rej));
+        return true;
+      }catch(_){ return false; }
+    })();
+    return this.loading;
+  },
+  async play(){
+    if(!audioPrefs.bgm) return;
+    const ok = await this.init();
+    if(!ok || !this.buffer) return;
+    if(this.ctx.state === 'suspended'){ try{ await this.ctx.resume(); }catch(_){} }
+    if(this.source) return;
+    const s = this.ctx.createBufferSource();
+    s.buffer = this.buffer;
+    s.loop = true;
+    s.connect(this.gain);
+    s.start(0);
+    this.source = s;
+  },
+  pause(){
+    if(!this.source) return;
+    try{ this.source.stop(); }catch(_){}
+    try{ this.source.disconnect(); }catch(_){}
+    this.source = null;
+  },
+};
+function bgmPlay(){ bgmAudio.play(); }
+function bgmPause(){ bgmAudio.pause(); }
+// ページ非表示/離脱で BGM を確実に止める（PWA→ホーム画面復帰時も含む）
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden) bgmPause();
+  else if(state && state.running) bgmPlay();
 });
+window.addEventListener('pagehide', bgmPause);
 
 // レイアウト
 const HUD_H = 36;
@@ -811,6 +872,9 @@ const state = {
   gameOver: false,
   itemCount: 1,
   itemMax: 3,
+  activeItemKind: null, // 'horn' | 'slow' | null
+  borrowedHorn: 0,      // 開始時に save から1借りた horn の本数
+  borrowedSlow: 0,      // 開始時に save から1借りた slow の本数
   scoreSinceItem: 0,
   lastPointer: {x:0, y:0, active:false},
   combo: 0,
@@ -1058,15 +1122,29 @@ function refreshHome(){
   tcBtn.innerHTML = (save.coins < TICKET_PRICE)
     ? `コインが ${TICKET_PRICE - save.coins} こ たりない`
     : `${TICKET_PRICE} <svg class="ic"><use href="#ic-coin"/></svg> で 1こ かう`;
-  // 使用トグル
-  const useBox = document.getElementById('useTicketBox');
-  document.getElementById('ticketCount').textContent = (save.owned.coinDouble||0);
-  if(save.owned.coinDouble > 0){
-    useBox.classList.remove('hidden');
+  // 持っていくアイテム ラジオ
+  const hornN = save.owned.zenmetsu || 0;
+  const slowN = save.owned.coinDouble || 0;
+  document.getElementById('carryHornCount').textContent = hornN;
+  document.getElementById('carrySlowCount').textContent = slowN;
+  const hornOpt = carryBoxEl.querySelector('.carryOpt[data-kind="horn"]');
+  const slowOpt = carryBoxEl.querySelector('.carryOpt[data-kind="slow"]');
+  hornOpt.classList.toggle('hidden', hornN <= 0);
+  slowOpt.classList.toggle('hidden', slowN <= 0);
+  const wasShown = !carryBoxEl.classList.contains('hidden');
+  if(hornN > 0 || slowN > 0){
+    carryBoxEl.classList.remove('hidden');
+    if(!wasShown){
+      // 初出時のみ自動選択（horn 優先）
+      setCarrySelection(hornN > 0 ? 'horn' : 'slow');
+    }
   } else {
-    useBox.classList.add('hidden');
-    document.getElementById('useTicketChk').checked = false;
+    carryBoxEl.classList.add('hidden');
   }
+  // 選択肢が在庫切れになっていれば修正
+  const cur = getCarrySelection();
+  if(cur === 'horn' && hornN <= 0) setCarrySelection(slowN > 0 ? 'slow' : 'none');
+  if(cur === 'slow' && slowN <= 0) setCarrySelection(hornN > 0 ? 'horn' : 'none');
   // シールド（ベスト350こえると解禁）
   const shieldUnlocked = save.best >= SHIELD_UNLOCK_BEST;
   const shItem = homeEl.querySelector('.shopItem[data-item="shield"]');
@@ -1113,7 +1191,7 @@ function showHome(){
   homeEl.classList.remove('hidden');
   gameoverEl.classList.add('hidden');
   refreshHome();
-  bgmPlay();
+  bgmPause();
 }
 function hideHome(){
   homeEl.classList.add('hidden');
@@ -1778,12 +1856,12 @@ function makeBomb(){
     p = pickPortal();
   }
   const b = new Bomb(t, p.side, p.pos);
-  // 気まぐれダッシュ（黄色）：Lv3+ から発動。レベルが上がるほど確率↑（ボーナス中はOFF）
-  // Lv3 → 37% / Lv5 → 45% / Lv10 → 65% / Lv13+ → 上限 75%
+  // 気まぐれダッシュ（黄色）：Lv2+ から発動。レベルが上がるほど確率↑（ボーナス中はOFF）
+  // Lv2 → 55% / Lv3 → 60% / Lv5 → 70% / Lv9+ → 上限 90%
   const noDashy = state.activeUncle && state.activeUncle.perks.noDashy;
-  if(!noDashy && !state.bonus.active && t !== 'brown' && t !== 'gold' && t !== 'purple' && state.level >= 3 && Math.random() < Math.min(0.75, 0.25 + state.level*0.04)){
+  if(!noDashy && !state.bonus.active && t !== 'brown' && t !== 'gold' && t !== 'purple' && state.level >= 2 && Math.random() < Math.min(0.90, 0.45 + state.level*0.05)){
     b.dashy = true;
-    b.dashCooldown = 2200 + Math.random()*2500;
+    b.dashCooldown = 1600 + Math.random()*2000;
   }
   return b;
 }
@@ -1922,7 +2000,19 @@ function useItem(){
   state.itemCount--;
   state.runStats.itemsUsed++;
   sfx.item();
-  // 場上の未仕分けの車を全部除去（placed以外）
+  if(state.dragging){ state.dragging = null; }
+  if(state.activeItemKind === 'slow'){
+    // スロウ：10秒間 0.7倍速
+    state.coinDoubleActive = true;
+    state.slowTicketLeft = 10000;
+    spawnParticles(W*0.5, H*0.5, '#c89aff', 28);
+    spawnParticles(W*0.5, H*0.5, '#ffffff', 10);
+    state.flash = 0.35;
+    state.flashColor = '#c89aff';
+    state.scoreFloaters.push({x: W/2, y: H/2 - 8, val: 'スロウ！', mul: 5, life: 1000, max: 1000, noPrefix: true});
+    return;
+  }
+  // クラクション（horn / 既定）：場上の未仕分けの車を全部除去
   state.bombs.forEach(b=>{
     if(b._dead) return;
     if(b.state==='placed') return;
@@ -1930,10 +2020,6 @@ function useItem(){
     spawnParticles(b.x, b.y, '#ffd24a', 6);
     b._dead = true;
   });
-  // ドラッグ中だった場合の解放
-  if(state.dragging){
-    state.dragging = null;
-  }
   state.flash = 0.7;
   state.flashColor = '#ffffff';
   state.shake = 14;
@@ -2388,38 +2474,38 @@ function drawChutes(){
 function drawItem(){
   const x = ITEM.x, y = ITEM.y, s = ITEM.w;
   const active = state.itemCount > 0;
+  const kind = state.activeItemKind || 'horn';
+  const sprite = (kind === 'slow') ? ITEM_SPRITES.clock : ITEM_SPRITES.horn;
+  const label = (kind === 'slow') ? 'スロウ' : 'クラクション';
+  const edge = active ? (kind === 'slow' ? '#c89aff' : '#ffd24a') : '#444';
+  const labelColor = active ? edge : '#888';
   ctx.save();
-  // ピクセル風の枠（角丸なし）
   ctx.fillStyle = active ? 'rgba(40,40,55,.92)' : 'rgba(30,30,40,.7)';
   ctx.fillRect(x, y, s, s);
-  ctx.strokeStyle = active ? '#ffd24a' : '#444';
+  ctx.strokeStyle = edge;
   ctx.lineWidth = 2;
   ctx.strokeRect(x+1, y+1, s-2, s-2);
-  // アイコン：ホーン（クラクション）スプライト
   const SCALE = 2.4;
   const sw = 16 * SCALE, sh = 16 * SCALE;
   const cx = x + s/2, cy = y + s/2 + 2;
   const prevSmooth = ctx.imageSmoothingEnabled;
   ctx.imageSmoothingEnabled = false;
   if(active){
-    ctx.drawImage(ITEM_SPRITES.horn, cx - sw/2, cy - sh/2, sw, sh);
+    ctx.drawImage(sprite, cx - sw/2, cy - sh/2, sw, sh);
   } else {
-    // 無効時はグレースケール風（半透明）
     ctx.globalAlpha = 0.35;
-    ctx.drawImage(ITEM_SPRITES.horn, cx - sw/2, cy - sh/2, sw, sh);
+    ctx.drawImage(sprite, cx - sw/2, cy - sh/2, sw, sh);
     ctx.globalAlpha = 1;
   }
   ctx.imageSmoothingEnabled = prevSmooth;
-  // ×N 表記
   ctx.fillStyle = '#fff';
   ctx.font = 'bold 13px "DotGothic16", monospace';
   ctx.textAlign = 'right';
   ctx.fillText('×'+state.itemCount, x+s-5, y+s-5);
-  // ラベル
-  ctx.fillStyle = active ? '#ffd24a' : '#888';
+  ctx.fillStyle = labelColor;
   ctx.font = 'bold 9px "DotGothic16", monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('クラクション', cx, y+10);
+  ctx.fillText(label, cx, y+10);
   ctx.restore();
 }
 
@@ -2738,7 +2824,27 @@ function startGame(){
   const activeUncle = uncleById(save.uncleId);
   state.activeUncle = activeUncle;
   state.itemPerkBonus = activeUncle.perks.startHorn || 0;
-  state.itemCount = (save.owned.zenmetsu || 0) + state.itemPerkBonus;
+  // 持ち込みアイテム（1プレイ1個）：ホームのラジオで選ぶ
+  state.activeItemKind = null;
+  state.itemCount = 0;
+  state.borrowedHorn = 0;
+  state.borrowedSlow = 0;
+  const carry = getCarrySelection();
+  if(carry === 'horn' && (save.owned.zenmetsu||0) > 0){
+    save.owned.zenmetsu--;
+    state.borrowedHorn = 1;
+    state.activeItemKind = 'horn';
+    state.itemCount = 1 + state.itemPerkBonus;
+  } else if(carry === 'slow' && (save.owned.coinDouble||0) > 0){
+    save.owned.coinDouble--;
+    state.borrowedSlow = 1;
+    state.activeItemKind = 'slow';
+    state.itemCount = 1;
+  } else if(state.itemPerkBonus > 0){
+    // 何も持って行かなくても、パーク分だけホーンが使える
+    state.activeItemKind = 'horn';
+    state.itemCount = state.itemPerkBonus;
+  }
   state.combo = 0;
   state.comboTimer = 0;
   state.scoreFloaters = [];
@@ -2746,23 +2852,17 @@ function startGame(){
   state.bonus = {active:false, timeLeft:0, coinsThisStage:0};
   state.slowLeft = 0;
   state.timeScale = 1;
-  // スロウ消費（10秒間 0.7 倍速）
+  // スロウは持ち込み式タップアイテムに変更（startGame では発動しない）
   state.coinDoubleActive = false;
   state.slowTicketLeft = 0;
-  if(useTicketChk.checked && (save.owned.coinDouble||0) > 0){
-    save.owned.coinDouble--;
-    state.coinDoubleActive = true;
-    state.slowTicketLeft = 10000;
-    SAVE.save(save);
-  }
   // シールド消費（最初の追突1回をふせぐ）
   state.shieldActive = false;
   state.shieldUsedThisRun = false;
   if(useShieldChk.checked && (save.owned.shield||0) > 0){
     save.owned.shield--;
     state.shieldActive = true;
-    SAVE.save(save);
   }
+  SAVE.save(save);
   ensureDailyMissions();
   hideHome();
   gameoverEl.classList.add('hidden');
@@ -2789,14 +2889,19 @@ function endGame(){
   }
   state.gameOver = true;
   state.running = false;
-  // ホーム画面でも BGM は流れ続ける（明示的に止めない）
+  bgmPause();
   // 報酬：基本コインはスコア = コイン、罰金があれば差し引き
   const baseEarned = state.score;
   const fine = state.runStats.fineApplied || 0;
   const earned = baseEarned - fine;
   save.coins = Math.max(0, save.coins + earned);
-  // 持ち物：使い切ったぶんを永続化（パーク分は持ち越さない）
-  save.owned.zenmetsu = Math.max(0, state.itemCount - (state.itemPerkBonus || 0));
+  // 持ち込みアイテムの未使用返却（1プレイ1個ルール）
+  if(state.borrowedHorn > 0 && state.itemCount > state.itemPerkBonus){
+    save.owned.zenmetsu = (save.owned.zenmetsu || 0) + 1;
+  }
+  if(state.borrowedSlow > 0 && state.itemCount > 0){
+    save.owned.coinDouble = (save.owned.coinDouble || 0) + 1;
+  }
   // ベスト
   let isNewBest = false;
   if(state.score > save.best){
