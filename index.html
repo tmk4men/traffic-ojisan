@@ -24,11 +24,16 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=4">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=4">
 <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png?v=4">
-<!-- ピクセルフォント -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<!-- ピクセルフォント（アプリ同梱・オフライン対応） -->
+<link rel="preload" href="DotGothic16.ttf" as="font" type="font/ttf" crossorigin>
 <style>
+  @font-face{
+    font-family:'DotGothic16';
+    src:url('DotGothic16.ttf') format('truetype');
+    font-weight:400;
+    font-style:normal;
+    font-display:swap;
+  }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;}
   html,body{margin:0;padding:0;height:100%;background:#222;overflow:hidden;font-family:'DotGothic16','Press Start 2P',"Hiragino Kaku Gothic ProN",monospace;color:#fff;letter-spacing:0.02em;}
   #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
@@ -656,6 +661,73 @@ const SAVE = {
 };
 const save = SAVE.load();
 
+// ============= AdMob（Androidネイティブのみ動作。Web版は何もしない） =============
+// 広告ユニット: トラおじ インタースティシャル（本番ID）
+// 本番モード：実広告が配信される。開発時は true に戻すこと
+const AD_IS_TESTING = false;
+const AD_INTERSTITIAL_ID = 'ca-app-pub-5634961953346923/3802007614';
+const AD_BANNER_ID = 'ca-app-pub-5634961953346923/6727286956';
+const AD_EVERY_N_PLAYS = 3;
+const adMob = {
+  ready: false,
+  plugin: null,
+  bannerShown: false,
+  playCount: parseInt(localStorage.getItem('traffic_play_count') || '0', 10),
+  async init(){
+    try{
+      if(!window.Capacitor || !window.Capacitor.isNativePlatform || !window.Capacitor.isNativePlatform()) return;
+      const plugin = window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob;
+      if(!plugin) return;
+      this.plugin = plugin;
+      await plugin.initialize({
+        initializeForTesting: AD_IS_TESTING,
+        tagForChildDirectedTreatment: false,
+      });
+      this.ready = true;
+      this._prepare();
+    }catch(e){ console.warn('[AdMob] init失敗', e); }
+  },
+  async _prepare(){
+    if(!this.ready) return;
+    try{
+      await this.plugin.prepareInterstitial({ adId: AD_INTERSTITIAL_ID, isTesting: AD_IS_TESTING });
+    }catch(e){ console.warn('[AdMob] prepare失敗', e); }
+  },
+  incrementPlay(){
+    this.playCount++;
+    localStorage.setItem('traffic_play_count', String(this.playCount));
+  },
+  async maybeShowInterstitial(){
+    if(!this.ready) return;
+    if(this.playCount <= 0 || this.playCount % AD_EVERY_N_PLAYS !== 0) return;
+    try{
+      await this.plugin.showInterstitial();
+    }catch(e){ console.warn('[AdMob] show失敗', e); }
+    this._prepare();
+  },
+  async showBanner(){
+    if(!this.ready || this.bannerShown) return;
+    try{
+      await this.plugin.showBanner({
+        adId: AD_BANNER_ID,
+        adSize: 'ADAPTIVE_BANNER',
+        position: 'BOTTOM_CENTER',
+        margin: 0,
+        isTesting: AD_IS_TESTING,
+      });
+      this.bannerShown = true;
+    }catch(e){ console.warn('[AdMob] banner表示失敗', e); }
+  },
+  async hideBanner(){
+    if(!this.ready || !this.bannerShown) return;
+    try{
+      await this.plugin.hideBanner();
+      this.bannerShown = false;
+    }catch(e){ console.warn('[AdMob] banner非表示失敗', e); }
+  },
+};
+adMob.init();
+
 // オーディオの ON/OFF 設定（localStorage で永続化）
 const audioPrefs = {
   bgm: localStorage.getItem('traffic_bgm') !== '0',
@@ -1188,6 +1260,7 @@ function refreshHome(){
 
 function showHome(){
   ensureDailyMissions();
+  adMob.hideBanner();
   homeEl.classList.remove('hidden');
   gameoverEl.classList.add('hidden');
   refreshHome();
@@ -2864,6 +2937,7 @@ function startGame(){
   }
   SAVE.save(save);
   ensureDailyMissions();
+  adMob.hideBanner();
   hideHome();
   gameoverEl.classList.add('hidden');
   bgmPlay();
@@ -2938,11 +3012,12 @@ function endGame(){
     isNewBest,
     maxCombo: state.runStats.maxCombo|0,
   };
-  const card = makeShareCanvas(state._lastShare);
-  shareCardEl.src = card.toDataURL('image/png');
-  shareCardEl.style.display = 'block';
-  state._lastShareCanvas = card;
+  // シェア用にOGPキャンバスは生成しておくが、画面には表示せずバナー広告に置き換える
+  state._lastShareCanvas = makeShareCanvas(state._lastShare);
+  shareCardEl.style.display = 'none';
   gameoverEl.classList.remove('hidden');
+  adMob.incrementPlay();
+  adMob.showBanner();
 }
 
 // ============= シェア機能 =============
@@ -2996,10 +3071,6 @@ function makeShareCanvas(data){
   x.font = 'bold 22px "DotGothic16", monospace';
   x.textAlign = 'center';
   x.fillText(`Lv.${data.level}    さいこう ${data.best}    最大コンボ ${data.maxCombo}`, SZ/2, 618);
-  // 下部 URL
-  x.fillStyle = '#88ddff';
-  x.font = '20px "DotGothic16", monospace';
-  x.fillText(SHARE_URL, SZ/2, 678);
   return c;
 }
 function drawShareCar(x, cx, cy, type){
@@ -3227,7 +3298,11 @@ startBtn.addEventListener('click', () => { sfx.tap(); startGame(); });
     });
   });
 })();
-goHomeBtn.addEventListener('click', () => { sfx.tap(); showHome(); });
+goHomeBtn.addEventListener('click', async () => {
+  sfx.tap();
+  await adMob.maybeShowInterstitial();
+  showHome();
+});
 buyZenBtnEl.addEventListener('click', buyZenmetsu);
 buyTcBtnEl.addEventListener('click', buyTicket);
 buyShieldBtnEl.addEventListener('click', buyShield);

@@ -1,0 +1,10 @@
+{
+  "appId": "com.tmk4men.trafficojisan",
+  "appName": "トラフィックおじさん",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#1a1a26"
+  },
+  "backgroundColor": "#1a1a26"
+}
