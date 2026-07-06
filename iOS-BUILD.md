@@ -57,21 +57,19 @@ npx cap sync ios        # www/ の中身をアプリに同期
 
 ---
 
-## 4. アプリアイコン & スプラッシュを生成（推奨）
+## 4. アプリアイコンを反映（1024pxは生成済み）
 
-App Storeには **1024×1024** のアイコンが必須です。現状の `icon-512.png` は512pxなので、
-1024pxのアイコン画像を1枚用意してください（ドット絵なので512→1024の拡大でも可）。
+App Store必須の **1024×1024アイコン**は `assets/icon.png` として**すでに用意済み**です
+（`icon-512.png` からドット感を保って自動生成済み・透過なし）。
+下のコマンド1発で、Xcodeの全アイコンサイズに反映されます：
 
 ```bash
-# 1024pxのアイコンを assets/icon-only.png として置く（背景込みなら icon.png）
-mkdir -p assets
-# 例: icon-512.png を 1024 に拡大したものを assets/icon.png として保存
-
-npx @capacitor/assets generate --ios
+npm run icons        # = capacitor-assets generate --ios
 ```
 
-これで Xcode のアイコン枠・起動画面が自動生成されます。
-（手動でやる場合は Xcode の `App/Assets.xcassets/AppIcon` に画像を入れてもOK）
+> アイコンを差し替えたい場合：新しい元画像を用意して `assets/icon.png`（1024px・透過なし）を
+> 置き換え → `npm run icons` を再実行。
+> `icon-512.png` を更新した場合は `npm run icon:make` で1024版を作り直せます。
 
 ---
 

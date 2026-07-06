@@ -5,6 +5,8 @@
   "description": "トラフィックおじさん — iOSアプリ（Capacitorラッパー）",
   "scripts": {
     "build:www": "node scripts/build-www.mjs",
+    "icon:make": "node scripts/make-icon.mjs",
+    "icons": "capacitor-assets generate --ios",
     "sync": "npm run build:www && npx cap sync ios",
     "open:ios": "npx cap open ios"
   },
@@ -12,5 +14,9 @@
     "@capacitor/cli": "^8.4.1",
     "@capacitor/core": "^8.4.1",
     "@capacitor/ios": "^8.4.1"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "sharp": "^0.35.3"
   }
 }
