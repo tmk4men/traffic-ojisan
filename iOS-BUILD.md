@@ -125,6 +125,49 @@ Xcodeが開いたら、左の **App** ターゲットを選び：
 
 ---
 
+## 再提出（リジェクト対応後の再ビルド）
+
+一度Macで `ios/` を作成済みなら、`npx cap add ios` は**不要**。修正を反映して
+ビルド番号を上げるだけです。
+
+```bash
+cd traffic-ojisan
+git pull                # Windows側の修正(文字拡大など)を取得
+npm run sync            # build:www + cap sync ios（index.htmlの変更をアプリへ反映）
+npx cap open ios        # Xcodeを開く
+```
+
+Xcodeで：
+
+1. **General > Build を 1 つ上げる**（`1` → `2`）。Version は `1.0` のままでOK。
+   ※ 再提出は必ず Build 番号を上げないとアップロードできません。
+2. iPad系シミュレータ（**iPad Air**）で ▶ Run して、文字が読みやすいか確認。
+3. **Product > Archive** → Organizer → **Distribute App** → App Store Connect へアップロード。
+4. App Store Connect でその新ビルドを選び、審査に再提出。
+
+**今回のリジェクト対応メモ（2026-07-07 分）**
+
+- Guideline 1.5（Support URL 404）→ **対応済み**。GitHub Pages の Jekyll ビルドが
+  失敗して support.html / privacy.html が 404 になっていたのが原因。`.nojekyll` を
+  追加して解消済み。以下が 200 で開くことを確認済み：
+  - https://tmk4men.github.io/traffic-ojisan/support.html
+  - https://tmk4men.github.io/traffic-ojisan/privacy.html
+  App Store Connect の Support URL は上記 support.html を指定すればOK。
+- Guideline 4（文字が読みにくい）→ **対応済み**。`index.html` の CSS と
+  キャンバス描画の文字を全体的に拡大（最小 10〜12px → 13〜14px、ゲーム内 9〜15px → 12〜17px）。
+  → Mac で `git pull → npm run sync` すればこの修正がアプリに入ります。
+
+再提出時の Review Notes（英語推奨）例：
+
+```
+We fixed the Support URL, which now opens correctly with contact information
+(https://tmk4men.github.io/traffic-ojisan/support.html).
+We also improved text readability across the app by increasing font sizes and
+contrast, verified on an iPad Air simulator. Thank you for the re-review.
+```
+
+---
+
 ## AdMobを後から有効化する（広告を出したくなったら）
 
 index.htmlの広告コードは既に入っていて、**プラグイン未インストールなので今は無効**です。
