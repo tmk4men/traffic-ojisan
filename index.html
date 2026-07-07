@@ -39,7 +39,7 @@
   #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
   canvas{background:#000;touch-action:none;display:block;box-shadow:0 0 24px rgba(0,0,0,.6);}
   .hidden{display:none !important;}
-  .small{font-size:12px;opacity:.7;}
+  .small{font-size:14px;opacity:.7;}
   .ic{display:inline-block;width:1.05em;height:1.05em;vertical-align:-0.18em;}
   .ic-lg{width:1.7em;height:1.7em;vertical-align:-0.35em;}
   .ic-xl{width:2.4em;height:2.4em;vertical-align:-0.45em;}
@@ -61,10 +61,10 @@
            display:flex;flex-direction:column;gap:2px;min-width:160px;
            box-shadow:4px 4px 0 rgba(0,0,0,.5);}
   #menuPop .mItem{background:transparent;color:#fff;border:none;padding:12px 14px;
-                  text-align:left;cursor:pointer;font-size:14px;border-radius:0;
+                  text-align:left;cursor:pointer;font-size:16px;border-radius:0;
                   display:flex;justify-content:space-between;align-items:center;gap:10px;}
   #menuPop .mItem:active{background:rgba(255,210,74,.18);}
-  #menuPop .mItem .toggleVal{font-weight:bold;font-size:12px;letter-spacing:.1em;}
+  #menuPop .mItem .toggleVal{font-weight:bold;font-size:14px;letter-spacing:.1em;}
   #menuPop .mItem .toggleVal.on{color:#88dd88;}
   #menuPop .mItem .toggleVal.off{color:#888;}
   /* あそびかた・クレジット モーダル */
@@ -74,11 +74,11 @@
                padding:18px 20px;max-width:340px;width:100%;max-height:84vh;
                overflow-y:auto;color:#fff;box-shadow:6px 6px 0 rgba(0,0,0,.5);}
   #howto h2, #credit h2{margin:0 0 12px;color:#ffd24a;text-align:center;font-size:20px;}
-  #howto h3, #credit h3{margin:14px 0 6px;color:#ffd24a;font-size:14px;border-bottom:1px solid rgba(255,210,74,.3);padding-bottom:4px;}
-  #howto p, #credit p{font-size:13px;line-height:1.7;margin:4px 0;}
-  #howto .row{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:13px;}
+  #howto h3, #credit h3{margin:14px 0 6px;color:#ffd24a;font-size:16px;border-bottom:1px solid rgba(255,210,74,.3);padding-bottom:4px;}
+  #howto p, #credit p{font-size:15px;line-height:1.7;margin:4px 0;}
+  #howto .row{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:15px;}
   #howto .marker{flex-shrink:0;width:26px;height:26px;border-radius:50%;
-                 display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;}
+                 display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:16px;}
   #howto .m-red{background:#d24a64;}
   #howto .m-blk{background:#3a5db8;border:1px solid #88aaff;}
   #howto .m-brn{background:#7a5230;}
@@ -86,17 +86,17 @@
   #howto .m-pur{background:#7a3acc;}
   #howto .m-gld{background:#e0a818;color:#000;}
   #howto .closeBtn, #credit .closeBtn{margin-top:14px;width:100%;padding:11px;border:3px solid #a06c10;border-radius:0;
-                   background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:15px;
+                   background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:17px;
                    box-shadow:0 4px 0 #a06c10;}
   #howto .closeBtn:active, #credit .closeBtn:active{transform:translateY(2px);box-shadow:0 2px 0 #a06c10;}
   #home h1{font-size:26px;margin:6px 0 10px;letter-spacing:.05em;color:#ffd24a;text-shadow:0 2px 0 #000;}
-  #home .stats{display:flex;gap:14px;margin:6px 0 10px;font-size:14px;}
+  #home .stats{display:flex;gap:14px;margin:6px 0 10px;font-size:16px;}
   #home .stats .pill{background:rgba(0,0,0,.45);border:2px solid rgba(255,210,74,.5);
                      border-radius:0;padding:6px 12px;}
   /* タブナビ */
   #home .tabs{display:flex;gap:0;width:100%;max-width:320px;margin:6px 0 12px;}
   #home .tabs .tab{flex:1;padding:10px;border:3px solid #ffd24a;border-radius:0;
-                    background:rgba(0,0,0,.45);color:#aaa;font-weight:bold;font-size:14px;
+                    background:rgba(0,0,0,.45);color:#aaa;font-weight:bold;font-size:16px;
                     cursor:pointer;font-family:inherit;letter-spacing:0.05em;}
   #home .tabs .tab.active{background:#ffd24a;color:#222;border-bottom-color:transparent;
                            box-shadow:inset 0 -3px 0 #ffd24a;}
@@ -105,7 +105,7 @@
   #home .tabContent.hidden{display:none;}
   #home .stats b{color:#ffcc33;margin-left:4px;}
   #home .shop{width:100%;max-width:320px;margin:8px 0;}
-  #home .shop h3{margin:8px 0;font-size:14px;text-align:center;opacity:.7;letter-spacing:.2em;}
+  #home .shop h3{margin:8px 0;font-size:16px;text-align:center;opacity:.7;letter-spacing:.2em;}
   #home .shopItem{background:rgba(255,255,255,.06);border:2px solid rgba(255,210,74,.4);
                   border-radius:0;padding:10px 12px;margin-bottom:8px;}
   #home .shopItem .row{display:flex;align-items:center;gap:10px;}
@@ -113,46 +113,46 @@
                         border:2px solid #555;
                         display:flex;align-items:center;justify-content:center;font-size:22px;}
   #home .shopItem .info{flex:1;min-width:0;}
-  #home .shopItem .name{font-weight:bold;font-size:14px;}
-  #home .shopItem .desc{font-size:11px;opacity:.7;}
-  #home .shopItem .own{font-size:11px;color:#ffd24a;}
+  #home .shopItem .name{font-weight:bold;font-size:16px;}
+  #home .shopItem .desc{font-size:14px;opacity:.7;}
+  #home .shopItem .own{font-size:14px;color:#ffd24a;}
   #home .shopItem button{margin-top:8px;width:100%;padding:8px;border:3px solid #a06c10;border-radius:0;
-                         background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:13px;
+                         background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:15px;
                          box-shadow:0 3px 0 #a06c10;}
   #home .shopItem button:active{transform:translateY(1px);box-shadow:0 2px 0 #a06c10;}
   #home .shopItem button:disabled{background:#444;color:#888;cursor:not-allowed;border-color:#222;box-shadow:none;}
-  #home .shopItem.locked{opacity:.65;border-color:rgba(120,120,140,.6);}
+  #home .shopItem.locked{opacity:.82;border-color:rgba(120,120,140,.6);}
   #home .shopItem.locked .icon{filter:grayscale(1) brightness(.6);}
-  #home .shopItem .lockNote{font-size:11px;color:#ff8888;margin-top:2px;}
+  #home .shopItem .lockNote{font-size:14px;color:#ff8888;margin-top:2px;}
   #home #startBtn{margin-top:12px;padding:14px 36px;font-size:20px;border:4px solid #993322;border-radius:0;
                   background:#ff6644;color:#fff;font-weight:bold;cursor:pointer;
                   box-shadow:0 6px 0 #993322;letter-spacing:0.1em;}
   #home #startBtn:active{transform:translateY(4px);box-shadow:0 2px 0 #993322;}
   #home .useTicket{width:100%;max-width:320px;margin:8px 0;background:rgba(255,102,204,.12);
                     border:2px solid rgba(255,102,204,.7);border-radius:0;padding:8px 12px;
-                    font-size:13px;}
+                    font-size:15px;}
   #home .useTicket label{display:flex;align-items:center;gap:6px;cursor:pointer;}
   #home .useTicket input{transform:scale(1.2);}
   #home .carryBox{width:100%;max-width:320px;margin:8px 0;background:rgba(136,221,255,.10);
-                  border:2px solid rgba(136,221,255,.6);border-radius:0;padding:8px 12px;font-size:13px;}
-  #home .carryBox .carryTitle{font-size:11px;opacity:.8;letter-spacing:.15em;color:#88ddff;margin-bottom:6px;}
+                  border:2px solid rgba(136,221,255,.6);border-radius:0;padding:8px 12px;font-size:15px;}
+  #home .carryBox .carryTitle{font-size:14px;opacity:.8;letter-spacing:.15em;color:#88ddff;margin-bottom:6px;}
   #home .carryBox .carryOpt{display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 2px;}
   #home .carryBox .carryOpt input{transform:scale(1.2);}
   #home .carryBox .carryOpt .ic{width:16px;height:16px;}
   #home .missions{width:100%;max-width:320px;margin-top:14px;}
-  #home .missions h3{margin:6px 0;font-size:13px;text-align:center;opacity:.8;letter-spacing:.2em;color:#88ddff;}
+  #home .missions h3{margin:6px 0;font-size:15px;text-align:center;opacity:.8;letter-spacing:.2em;color:#88ddff;}
   #home .missions ul{list-style:none;padding:0;margin:0;}
   #home .missions li{background:rgba(136,221,255,.08);border:2px solid rgba(136,221,255,.4);
-                     border-radius:0;padding:8px 10px;margin-bottom:6px;font-size:12px;}
+                     border-radius:0;padding:8px 10px;margin-bottom:6px;font-size:14px;}
   #home .missions li.done{background:rgba(136,221,136,.15);border-color:rgba(136,221,136,.5);opacity:.85;}
   #home .missions .mLine1{display:flex;align-items:center;gap:6px;font-weight:bold;}
   #home .missions .mLine1 .name{flex:1;}
-  #home .missions .mLine1 .reward{color:#ffd24a;font-size:11px;}
+  #home .missions .mLine1 .reward{color:#ffd24a;font-size:14px;}
   #home .missions .mBar{height:5px;background:rgba(0,0,0,.3);border-radius:3px;margin-top:4px;overflow:hidden;}
   #home .missions .mBar .mFill{height:100%;background:#88ddff;}
   #home .missions li.done .mBar .mFill{background:#88dd88;}
-  #home .missions .mProgress{font-size:10px;opacity:.7;margin-top:2px;text-align:right;}
-  #home .history{width:100%;max-width:320px;margin-top:12px;font-size:12px;}
+  #home .missions .mProgress{font-size:13px;opacity:.7;margin-top:2px;text-align:right;}
+  #home .history{width:100%;max-width:320px;margin-top:12px;font-size:14px;}
   #home .history h3{margin:6px 0;opacity:.7;letter-spacing:.2em;text-align:center;}
   #home .history ol{list-style:none;padding:0;margin:0;background:rgba(0,0,0,.25);
                     border:2px solid rgba(255,255,255,.15);border-radius:0;padding:8px 12px;}
@@ -181,18 +181,18 @@
   #home .currentUncle .portrait img{width:100%;height:100%;object-fit:cover;
                                      image-rendering:pixelated;}
   #home .currentUncle .info{flex:1;min-width:0;}
-  #home .currentUncle .label{font-size:10px;opacity:.65;letter-spacing:.2em;}
-  #home .currentUncle .name{font-weight:bold;font-size:14px;color:#ffd24a;}
-  #home .currentUncle .flavor{font-size:11px;opacity:.85;margin-top:2px;}
+  #home .currentUncle .label{font-size:13px;opacity:.82;letter-spacing:.2em;}
+  #home .currentUncle .name{font-weight:bold;font-size:16px;color:#ffd24a;}
+  #home .currentUncle .flavor{font-size:14px;opacity:.85;margin-top:2px;}
   #home .uncleCard .info{flex:1;min-width:0;}
-  #home .uncleCard .name{font-weight:bold;font-size:14px;color:#fff;}
-  #home .uncleCard .flavor{font-size:11px;opacity:.8;margin-top:2px;line-height:1.5;}
-  #home .uncleCard .perk{font-size:11px;color:#ffd24a;margin-top:3px;}
+  #home .uncleCard .name{font-weight:bold;font-size:16px;color:#fff;}
+  #home .uncleCard .flavor{font-size:14px;opacity:.8;margin-top:2px;line-height:1.5;}
+  #home .uncleCard .perk{font-size:14px;color:#ffd24a;margin-top:3px;}
   #home .uncleCard button.useBtn{margin-top:8px;padding:6px 14px;border:2px solid #a06c10;
-                                  background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:12px;
+                                  background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:14px;
                                   box-shadow:0 3px 0 #a06c10;}
   #home .uncleCard button.useBtn:active{transform:translateY(1px);box-shadow:0 1px 0 #a06c10;}
-  #home .uncleCard .activeLabel{font-size:11px;color:#ffd24a;font-weight:bold;
+  #home .uncleCard .activeLabel{font-size:14px;color:#ffd24a;font-weight:bold;
                                  letter-spacing:.1em;margin-top:8px;}
   /* デイリーログイン */
   #daily{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
@@ -200,20 +200,20 @@
   #daily .box{background:#2a2a36;border:3px solid #ffcc33;border-radius:0;padding:24px 30px;
               text-align:center;max-width:280px;box-shadow:6px 6px 0 rgba(0,0,0,.5);}
   #daily h2{margin:0 0 10px;color:#ffd24a;}
-  #daily .day{font-size:13px;opacity:.7;margin:4px 0;}
+  #daily .day{font-size:15px;opacity:.7;margin:4px 0;}
   #daily .streakDots{display:flex;justify-content:center;gap:5px;margin:8px 0;}
   #daily .streakDots .dot{width:18px;height:18px;border-radius:50%;background:#3a3a48;
                           display:flex;align-items:center;justify-content:center;
-                          font-size:10px;font-weight:bold;color:#666;}
+                          font-size:13px;font-weight:bold;color:#666;}
   #daily .streakDots .dot.done{background:#ffd24a;color:#222;}
   #daily .streakDots .dot.today{background:#ff6644;color:#fff;
                                 box-shadow:0 0 0 2px #ffd24a;animation:pulse .8s ease-in-out infinite alternate;}
   #daily .streakDots .dot.gift{background:#ff66aa;color:#fff;}
   @keyframes pulse{from{transform:scale(1);}to{transform:scale(1.15);}}
   #daily .amt{font-size:32px;font-weight:bold;color:#ffd24a;margin:8px 0;}
-  #daily .extra{color:#ffaa66;font-size:13px;margin-bottom:6px;}
+  #daily .extra{color:#ffaa66;font-size:15px;margin-bottom:6px;}
   #daily button{margin-top:14px;padding:10px 28px;border:3px solid #a06c10;border-radius:0;
-                background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:15px;
+                background:#ffcc33;color:#222;font-weight:bold;cursor:pointer;font-size:17px;
                 box-shadow:0 4px 0 #a06c10;}
   #daily button:active{transform:translateY(2px);box-shadow:0 2px 0 #a06c10;}
   /* ゲームオーバー画面 */
@@ -479,7 +479,7 @@
         </div>
         <button class="buyBtn">200円 で 1こ かう</button>
       </div>
-      <h3 style="margin:14px 0 6px;font-size:13px;text-align:center;opacity:.8;letter-spacing:.2em;color:#88ddff;">きゅうじん</h3>
+      <h3 style="margin:14px 0 6px;font-size:15px;text-align:center;opacity:.8;letter-spacing:.2em;color:#88ddff;">きゅうじん</h3>
       <p class="small" style="text-align:center;opacity:.7;margin:0 0 8px;">あたらしい おじさんを やとう（かいきり・1かいだけ）</p>
       <div id="hireList"></div>
     </div>
@@ -2328,7 +2328,7 @@ function drawSortZone(zone, baseDark, baseLight, edgeBright, edgeShadow, label, 
   ctx.fillRect(sx+signW, sy+signH/2-1, 2, 2);
   // ラベル文字
   ctx.fillStyle = '#fff';
-  ctx.font = 'bold 14px "DotGothic16", monospace';
+  ctx.font = 'bold 16px "DotGothic16", monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(label, cx, sy + signH/2 + 1);
@@ -2431,7 +2431,7 @@ function drawHud(){
   // SCORE（左）
   const overBest = state.score > save.best;
   ctx.fillStyle = overBest ? '#ffd24a' : '#fff';
-  ctx.font = 'bold 15px "DotGothic16", monospace';
+  ctx.font = 'bold 17px "DotGothic16", monospace';
   ctx.textAlign = 'left';
   ctx.fillText(`SCORE ${state.score}`, 10, 22);
   // BEST（中央）
@@ -2573,11 +2573,11 @@ function drawItem(){
   }
   ctx.imageSmoothingEnabled = prevSmooth;
   ctx.fillStyle = '#fff';
-  ctx.font = 'bold 13px "DotGothic16", monospace';
+  ctx.font = 'bold 15px "DotGothic16", monospace';
   ctx.textAlign = 'right';
   ctx.fillText('×'+state.itemCount, x+s-5, y+s-5);
   ctx.fillStyle = labelColor;
-  ctx.font = 'bold 9px "DotGothic16", monospace';
+  ctx.font = 'bold 13px "DotGothic16", monospace';
   ctx.textAlign = 'center';
   ctx.fillText(label, cx, y+10);
   ctx.restore();
@@ -2622,7 +2622,7 @@ function drawScoreFloaters(){
     const a = Math.max(0, f.life / f.max);
     ctx.globalAlpha = a;
     ctx.fillStyle = f.mul >= 5 ? '#ff66cc' : f.mul >= 3 ? '#ffd24a' : f.mul >= 2 ? '#aaffaa' : '#ffffff';
-    ctx.font = 'bold ' + (14 + f.mul*2) + 'px "DotGothic16", monospace';
+    ctx.font = 'bold ' + (16 + f.mul*2) + 'px "DotGothic16", monospace';
     ctx.textAlign = 'center';
     ctx.lineWidth = 3;
     ctx.strokeStyle = '#000';
@@ -2686,7 +2686,7 @@ function drawSlowOverlay(){
     ctx.fillStyle = 'rgba(150, 100, 220, '+ (0.06*fade) +')';
     ctx.fillRect(0,0,W,H);
     // 残り秒（右上、Lv の下）
-    ctx.font = 'bold 12px "DotGothic16", monospace';
+    ctx.font = 'bold 14px "DotGothic16", monospace';
     ctx.textAlign = 'right';
     ctx.lineWidth = 3;
     ctx.strokeStyle = '#3a1a4a';
@@ -2711,7 +2711,7 @@ function drawBonus(){
   roundRect(x-90, y-14, 180, 32, 14, false, true);
   // テキスト
   ctx.fillStyle = '#ffd24a';
-  ctx.font = 'bold 13px "DotGothic16", monospace';
+  ctx.font = 'bold 15px "DotGothic16", monospace';
   ctx.textAlign = 'center';
   ctx.fillText(`★ボーナス！ +5コイン／個 ★`, x, y);
   // 残り時間バー
@@ -2734,7 +2734,7 @@ function drawCombo(){
   roundRect(x-58, y-12, 116, 28, 14, false, true);
   // テキスト
   ctx.fillStyle = tier;
-  ctx.font = 'bold 14px "DotGothic16", monospace';
+  ctx.font = 'bold 16px "DotGothic16", monospace';
   ctx.textAlign = 'center';
   ctx.fillText(`COMBO ×${mul} (${state.combo})`, x, y+3);
   // 残り時間バー
@@ -2996,11 +2996,11 @@ function endGame(){
     ? `<svg class="ic"><use href="#ic-party"/></svg> <svg class="ic"><use href="#ic-trophy"/></svg> ハイスコアこうしん！`
     : `<svg class="ic"><use href="#ic-trophy"/></svg> さいこう: ${save.best}`;
   if(fine > 0){
-    bestHtml += `<div style="margin-top:8px;color:#ff5577;font-size:13px;">
+    bestHtml += `<div style="margin-top:8px;color:#ff5577;font-size:15px;">
       パトカー違反で罰金 -${fine}円</div>`;
   }
   if(newlyDone.length > 0){
-    bestHtml += `<div style="margin-top:10px;color:#88dd88;font-size:13px;">`
+    bestHtml += `<div style="margin-top:10px;color:#88dd88;font-size:15px;">`
       + newlyDone.map(m=>`<svg class="ic"><use href="#ic-check"/></svg> ${m.desc} クリア！ ${rewardLabel(m.reward)}`).join('<br>')
       + `</div>`;
   }
