@@ -662,12 +662,19 @@ const SAVE = {
 };
 const save = SAVE.load();
 
-// ============= AdMob（Androidネイティブのみ動作。Web版は何もしない） =============
-// 広告ユニット: トラおじ インタースティシャル（本番ID）
+// ============= AdMob（iOS/Androidネイティブで動作。Web版は何もしない） =============
 // 本番モード：実広告が配信される。開発時は true に戻すこと
 const AD_IS_TESTING = false;
-const AD_INTERSTITIAL_ID = 'ca-app-pub-5634961953346923/3802007614';
+// プラットフォーム判定（iOSは専用の広告ユニットIDを使う）
+const AD_PLATFORM = (window.Capacitor && window.Capacitor.getPlatform) ? window.Capacitor.getPlatform() : 'web';
+const AD_IS_IOS = AD_PLATFORM === 'ios';
+// インタースティシャル本番ID：iOSはトラおじiOS用ユニット、AndroidはAndroid用ユニット
+const AD_INTERSTITIAL_ID = AD_IS_IOS
+  ? 'ca-app-pub-2783540275927131/3242178330'   // iOS 本番インタースティシャル（トラおじ）
+  : 'ca-app-pub-5634961953346923/3802007614';  // Android 本番インタースティシャル
+// バナー本番ID（Androidのみ。iOSはバナー用ユニット未作成のため出さない）
 const AD_BANNER_ID = 'ca-app-pub-5634961953346923/6727286956';
+// インタースティシャル頻度：Androidはこの回数に1回。iOSはゲームオーバーのたび（毎回）。
 const AD_EVERY_N_PLAYS = 3;
 const adMob = {
   ready: false,
@@ -700,13 +707,16 @@ const adMob = {
   },
   async maybeShowInterstitial(){
     if(!this.ready) return;
-    if(this.playCount <= 0 || this.playCount % AD_EVERY_N_PLAYS !== 0) return;
+    if(this.playCount <= 0) return;
+    // iOSはゲームオーバーのたびに表示。Androidは AD_EVERY_N_PLAYS 回に1回。
+    if(!AD_IS_IOS && this.playCount % AD_EVERY_N_PLAYS !== 0) return;
     try{
       await this.plugin.showInterstitial();
     }catch(e){ console.warn('[AdMob] show失敗', e); }
     this._prepare();
   },
   async showBanner(){
+    if(AD_IS_IOS) return; // iOSはバナー用ユニット未作成のため表示しない
     if(!this.ready || this.bannerShown) return;
     try{
       await this.plugin.showBanner({

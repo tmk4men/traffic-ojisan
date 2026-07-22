@@ -168,32 +168,49 @@ contrast, verified on an iPad Air simulator. Thank you for the re-review.
 
 ---
 
-## AdMobを後から有効化する（広告を出したくなったら）
+## AdMob（iOS：インタースティシャルのみ・有効化済み 2026-07-22）
 
-index.htmlの広告コードは既に入っていて、**プラグイン未インストールなので今は無効**です。
-有効化する手順：
+**iOSはゲームオーバーのたびに全画面広告（インタースティシャル）を1回表示**します。バナーは
+iOS用ユニット未作成のため出しません（Androidはバナー＋3プレイに1回のまま）。
 
-1. **iOS用のAdMobを用意**（重要：現在のIDはAndroid用。iOSは別IDが必要）
-   - AdMob管理画面で **iOS用アプリ** を新規登録し、**iOS用のバナー/インタースティシャル広告ユニット** を作成。
-   - `index.html` の `AD_INTERSTITIAL_ID` / `AD_BANNER_ID` を、プラットフォームで
-     出し分けるように変更（iOS時はiOS用IDを使う）。
+### 使っているID（`index.html` 内・プラットフォームで自動切替）
+| 項目 | 値 |
+|---|---|
+| iOS App ID（Info.plistへ） | `ca-app-pub-2783540275927131~1106969584` |
+| iOS インタースティシャル | `ca-app-pub-2783540275927131/3242178330` |
+| Android インタースティシャル（変更なし） | `ca-app-pub-5634961953346923/3802007614` |
+| Android バナー（変更なし） | `ca-app-pub-5634961953346923/6727286956` |
 
-2. **プラグイン導入**
-   ```bash
-   npm install @capacitor-community/admob
-   npx cap sync ios
-   ```
+### Web側（このリポジトリ・済み）
+- `index.html`：`AD_IS_IOS` 判定を追加し、iOSは専用IDでゲームオーバーのたびに表示、バナー無し。
+- `package.json`：`@capacitor-community/admob ^8.0.0` を依存に追加済み。
 
-3. **Info.plist に追記**（`ios/App/App/Info.plist`）
-   - `GADApplicationIdentifier` = AdMobの **iOSアプリID**（`ca-app-pub-xxxx~xxxx`）
-   - `SKAdNetworkItems`（AdMob指定の広告ネットワークID一式）
-   - トラッキング許可を出す場合：`NSUserTrackingUsageDescription`（説明文）
+### Mac側でやること
+```bash
+git pull                 # 上記のWeb変更を取得
+npm install              # @capacitor-community/admob が入る
+npm run sync             # build:www + npx cap sync ios（プラグインをiOSに反映）
+npx cap open ios         # Xcode
+```
 
-4. **ATT（トラッキング許可）**：`@capacitor-community/admob` の
-   `requestTrackingAuthorization()` を初期化時に呼ぶ。
-   → この場合、App Store Connectのプライバシー申告を「広告/トラッキングあり」に更新。
+**Info.plist に追記**（`ios/App/App/Info.plist` の一番外側 `<dict>` 内）:
+```xml
+<key>GADApplicationIdentifier</key>
+<string>ca-app-pub-2783540275927131~1106969584</string>
+<key>SKAdNetworkItems</key>
+<array>
+  <dict><key>SKAdNetworkIdentifier</key><string>cstr6suwn9.skadnetwork</string></dict>
+  <dict><key>SKAdNetworkIdentifier</key><string>4fzdc2evr5.skadnetwork</string></dict>
+</array>
+```
+> `SKAdNetworkItems` はGoogleの完全なリストを推奨（無くても広告は出るが、計測のため入れておくと良い）。
+> ATT（トラッキング許可ダイアログ）は今回は出さない設定＝IDFA無しの非パーソナライズ広告で配信されます。
+> 出す場合は `NSUserTrackingUsageDescription` を追加し、初期化時に `requestTrackingAuthorization()` を呼ぶ。
 
-5. 実機で広告テストID（`AD_IS_TESTING = true`）で確認 → 問題なければ本番IDへ。
+**Xcodeで**: General > Build を +1（前回提出済みなら次の番号）→ Product > Archive → Distribute。
+
+> ⚠️ **App Store Connect のプライバシー申告を「データを収集しない」→「広告のためのデータ収集あり」へ更新必須。**
+> ⚠️ 自分で本番広告をタップしない（無効トラフィック）。実機確認は `AD_IS_TESTING = true` に一時変更するか、テストデバイス登録して行う。
 
 ---
 
