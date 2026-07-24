@@ -788,7 +788,15 @@ const sfx = {
     this.ctx = ctx;
     this.master = ctx.createGain();
     this.master.gain.value = 0.5;
-    this.master.connect(audioCore.master);
+    // 効果音は square/sawtooth 主体で可聴域上限まで倍音が乗る。そのままだと
+    // 画面収録のAAC再エンコードで折り返し歪みになり「音割れっぽく」聞こえるので、
+    // 10kHz以上だけ落とす。ピコピコ感は保ったまま耳に刺さる高域を削る。
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 10000;
+    lp.Q.value = 0.7;
+    this.master.connect(lp);
+    lp.connect(audioCore.master);
   },
   beep(freq, dur, type='sine', vol=0.2, slide=0){
     if(!audioPrefs.sfx) return;
