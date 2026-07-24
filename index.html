@@ -857,34 +857,43 @@ const sfx = {
     setTimeout(()=>this.beep(784, 0.16, 'triangle', 0.22), 200);
   },
   tap(){ this.beep(1100, 0.025, 'square', 0.10); },
-  // クラクション「プッ プッ」: loud=true で短間隔リピート可
-  // 5パターンのmp3からランダム再生（同時鳴らし対応のためHTMLAudio複製）
+  // クラクション「プッ プッ」: loud=true で短間隔リピート可。5パターンからランダム再生。
+  // ※現状どこからも呼ばれていない（鳴らす場面が未実装）。鳴らすようにしたとき、
+  //   HTMLAudioだと共有AudioContextの外を通ってリミッターが効かないので、
+  //   最初からデコードして audioCore 経由で鳴らす作りにしてある。
   _hornSrcs: ['horn-1.mp3','horn-2.mp3','horn-3.mp3','horn-4.mp3','horn-5.mp3'],
-  _hornPool: null,
-  _initHornPool(){
-    if(this._hornPool) return;
-    this._hornPool = this._hornSrcs.map(src => {
-      const a = new Audio(src);
-      a.preload = 'auto';
-      a.volume = 0.55;
-      return a;
-    });
+  _hornBufs: null,
+  _hornLoading: null,
+  _loadHorns(){
+    if(this._hornLoading) return this._hornLoading;
+    this.init();
+    if(!this.enabled || !this.ctx) return null;
+    const ctx = this.ctx;
+    this._hornLoading = Promise.all(this._hornSrcs.map(src =>
+      fetch(src)
+        .then(r => r.arrayBuffer())
+        .then(arr => new Promise((res, rej) => ctx.decodeAudioData(arr, res, rej)))
+        .catch(() => null)
+    )).then(bufs => (this._hornBufs = bufs.filter(Boolean)));
+    return this._hornLoading;
+  },
+  _playHorn(){
+    if(!this.ctx || !this._hornBufs || !this._hornBufs.length) return;
+    const buf = this._hornBufs[Math.floor(Math.random()*this._hornBufs.length)];
+    const s = this.ctx.createBufferSource(); s.buffer = buf;
+    const g = this.ctx.createGain(); g.gain.value = 0.55;
+    s.connect(g); g.connect(this.master);
+    s.start(this.ctx.currentTime);
   },
   honk(loud){
+    if(!audioPrefs.sfx) return;
     const now = performance.now();
     const cd = loud ? 700 : 1500;
     if(now - (this._lastHonk||0) < cd) return;
     this._lastHonk = now;
-    this._initHornPool();
-    const base = this._hornPool[Math.floor(Math.random()*this._hornPool.length)];
-    try{
-      const a = base.cloneNode();
-      a.volume = base.volume;
-      a.play().catch(()=>{});
-    }catch(_){
-      base.currentTime = 0;
-      base.play().catch(()=>{});
-    }
+    if(this._hornBufs){ this._playHorn(); return; }
+    const p = this._loadHorns();
+    if(p) p.then(() => this._playHorn());   // 初回だけデコード完了後に鳴る
   },
   // 追突事故：急ブレーキ→金属衝突→クラクション
   crash(){
