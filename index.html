@@ -749,17 +749,46 @@ function saveAudioPrefs(){
   localStorage.setItem('traffic_sfx', audioPrefs.sfx ? '1' : '0');
 }
 
+// オーディオ基盤：AudioContext は効果音とBGMで1本だけ共有する。
+// （iOSはコンテキストを複数持つと、画面収録などで音声セッションが再構成されたときに
+//   それぞれ別々にリサンプリングされて音割れの原因になる）
+// 出口には必ずリミッターを挟み、効果音とBGMが重なってもピークが振り切れないようにする。
+const audioCore = {
+  ctx: null, master: null, failed: false,
+  get(){
+    if(this.failed) return null;
+    if(!this.ctx){
+      try{
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if(!AC) throw new Error('no AudioContext');
+        this.ctx = new AC();
+        const limiter = this.ctx.createDynamicsCompressor();
+        limiter.threshold.value = -3;
+        limiter.knee.value = 0;
+        limiter.ratio.value = 12;
+        limiter.attack.value = 0.003;
+        limiter.release.value = 0.15;
+        limiter.connect(this.ctx.destination);
+        this.master = limiter;
+      }catch(e){ this.failed = true; this.ctx = null; return null; }
+    }
+    // 収録開始やバックグラウンド復帰でsuspendedになることがあるので毎回拾う
+    if(this.ctx.state === 'suspended'){ try{ this.ctx.resume(); }catch(_){} }
+    return this.ctx;
+  },
+};
+
 // 効果音（Web Audio で合成、ファイル不要）
 const sfx = {
   ctx: null, master: null, enabled: true,
   init(){
+    const ctx = audioCore.get();
+    if(!ctx){ this.enabled = false; return; }
     if(this.ctx) return;
-    try {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-      this.master = this.ctx.createGain();
-      this.master.gain.value = 0.5;
-      this.master.connect(this.ctx.destination);
-    } catch(e){ this.enabled = false; }
+    this.ctx = ctx;
+    this.master = ctx.createGain();
+    this.master.gain.value = 0.5;
+    this.master.connect(audioCore.master);
   },
   beep(freq, dur, type='sine', vol=0.2, slide=0){
     if(!audioPrefs.sfx) return;
@@ -881,12 +910,12 @@ const bgmAudio = {
     if(this.buffer) return true;
     if(this.loading) return this.loading;
     this.loading = (async () => {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if(!AC) return false;
-      this.ctx = new AC();
-      this.gain = this.ctx.createGain();
+      const ctx = audioCore.get();   // 効果音と同じ AudioContext を共有
+      if(!ctx) return false;
+      this.ctx = ctx;
+      this.gain = ctx.createGain();
       this.gain.gain.value = 0.35;
-      this.gain.connect(this.ctx.destination);
+      this.gain.connect(audioCore.master);
       try{
         const resp = await fetch('bgm-stage.mp3');
         const arr = await resp.arrayBuffer();
